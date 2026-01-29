@@ -8,6 +8,7 @@ import { PlanInput } from './PlanInput';
 import { ProgressBar } from './ProgressBar';
 import { TaskList } from './TaskList';
 import { usePlannerStore } from '@/stores/planner';
+import { generatePlan } from '@/lib/api/planning';
 import { DEMO_MODE } from '@/lib/demo/config';
 import { demoPlan } from '@/lib/demo/plannerData';
 import type { Plan } from '@/types/planner';
@@ -117,6 +118,16 @@ export function PlannerPage() {
             progress: 0,
           },
         };
+
+        addPlan(newPlan);
+      } else {
+        // Use real API
+        const plan = await generatePlan({
+          task_description: description,
+          max_steps: 10,
+        });
+        addPlan(plan);
+      }
 
         addPlan(newPlan);
       } else {

@@ -5,6 +5,7 @@ import {
   ListTodo,
   BookOpen,
   Activity,
+  CheckSquare,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -58,5 +59,12 @@ export const navigationItems: NavigationItem[] = [
     icon: Activity,
     path: '/ops',
     description: 'System operations',
+  },
+  {
+    id: 'curation',
+    label: 'Curation',
+    icon: CheckSquare,
+    path: '/curation',
+    description: 'Content quality management',
   },
 ];

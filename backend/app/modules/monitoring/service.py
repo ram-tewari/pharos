@@ -182,56 +182,59 @@ class MonitoringService:
             Dictionary with engagement metrics
         """
         try:
+            from sqlalchemy import select, func
+            
             cutoff_date = datetime.utcnow() - timedelta(days=time_window_days)
 
             # Total users with profiles
             try:
-                total_users = db.query(UserProfile).count()
+                result = await db.execute(select(func.count(UserProfile.id)))
+                total_users = result.scalar() or 0
             except Exception:
                 total_users = 0
 
             # Active users (with interactions in time window)
-            active_users = (
-                db.query(UserInteraction.user_id)
-                .filter(UserInteraction.interaction_timestamp >= cutoff_date)
-                .distinct()
-                .count()
+            result = await db.execute(
+                select(func.count(func.distinct(UserInteraction.user_id)))
+                .where(UserInteraction.interaction_timestamp >= cutoff_date)
             )
+            active_users = result.scalar() or 0
 
             # Total interactions
-            total_interactions = (
-                db.query(UserInteraction)
-                .filter(UserInteraction.interaction_timestamp >= cutoff_date)
-                .count()
+            result = await db.execute(
+                select(func.count(UserInteraction.id))
+                .where(UserInteraction.interaction_timestamp >= cutoff_date)
             )
+            total_interactions = result.scalar() or 0
 
             # Interactions by type
-            interactions_by_type = (
-                db.query(
+            result = await db.execute(
+                select(
                     UserInteraction.interaction_type,
                     func.count(UserInteraction.id).label("count"),
                 )
-                .filter(UserInteraction.interaction_timestamp >= cutoff_date)
+                .where(UserInteraction.interaction_timestamp >= cutoff_date)
                 .group_by(UserInteraction.interaction_type)
-                .all()
             )
+            interactions_by_type = result.all()
 
             interaction_breakdown = {
                 itype: count for itype, count in interactions_by_type
             }
 
             # Average session duration
-            avg_session = db.query(func.avg(UserProfile.avg_session_duration)).scalar()
+            result = await db.execute(select(func.avg(UserProfile.avg_session_duration)))
+            avg_session = result.scalar() or 0.0
 
             # Positive interaction rate
-            positive_interactions = (
-                db.query(UserInteraction)
-                .filter(
+            result = await db.execute(
+                select(func.count(UserInteraction.id))
+                .where(
                     UserInteraction.interaction_timestamp >= cutoff_date,
                     UserInteraction.is_positive == 1,
                 )
-                .count()
             )
+            positive_interactions = result.scalar() or 0
 
             positive_rate = (
                 positive_interactions / total_interactions

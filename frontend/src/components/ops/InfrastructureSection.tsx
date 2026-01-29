@@ -139,18 +139,18 @@ export function InfrastructureSection({
             <div className="grid gap-4 md:grid-cols-3">
               <MetricCard
                 title="Hit Rate"
-                value={`${cache.hit_rate.toFixed(1)}%`}
-                status={cache.hit_rate < 50 ? 'warning' : 'success'}
+                value={cache.hit_rate != null ? `${cache.hit_rate.toFixed(1)}%` : '-'}
+                status={cache.hit_rate != null && cache.hit_rate < 50 ? 'warning' : 'success'}
               />
               <MetricCard
                 title="Cache Size"
-                value={cache.size_mb.toFixed(2)}
+                value={cache.size_mb != null ? cache.size_mb.toFixed(2) : '-'}
                 unit="MB"
               />
               <MetricCard
                 title="Eviction Rate"
-                value={cache.eviction_rate.toFixed(2)}
-                status={cache.eviction_rate > 10 ? 'warning' : 'success'}
+                value={cache.eviction_rate != null ? cache.eviction_rate.toFixed(2) : '-'}
+                status={cache.eviction_rate != null && cache.eviction_rate > 10 ? 'warning' : 'success'}
               />
             </div>
           ) : (
@@ -225,12 +225,12 @@ export function InfrastructureSection({
                       </div>
                       <div className="text-xs space-y-1">
                         <p className="text-muted-foreground">
-                          Inference: {model.inference_time_ms}ms
+                          Inference: {model.inference_time_ms ?? '-'}ms
                         </p>
                         <p className="text-muted-foreground">
-                          Memory: {model.memory_mb.toFixed(1)}MB
+                          Memory: {model.memory_mb != null ? model.memory_mb.toFixed(1) : '-'}MB
                         </p>
-                        {model.error_rate > 0 && (
+                        {model.error_rate != null && model.error_rate > 0 && (
                           <p className="text-red-500">
                             Error rate: {(model.error_rate * 100).toFixed(1)}%
                           </p>

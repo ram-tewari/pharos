@@ -79,7 +79,7 @@ export const editorApi = {
    * @endpoint GET /resources/{resource_id}
    */
   getResource: async (resourceId: string): Promise<Resource> => {
-    const response = await apiClient.get(`/resources/${resourceId}`);
+    const response = await apiClient.get(`/api/resources/${resourceId}`);
     return validateResponseStrict(response.data, ResourceSchema, `GET /resources/${resourceId}`);
   },
 
@@ -90,7 +90,7 @@ export const editorApi = {
    * @endpoint GET /resources/{resource_id}/status
    */
   getResourceStatus: async (resourceId: string): Promise<ProcessingStatus> => {
-    const response = await apiClient.get(`/resources/${resourceId}/status`);
+    const response = await apiClient.get(`/api/resources/${resourceId}/status`);
     return validateResponseStrict(
       response.data,
       ProcessingStatusSchema,

@@ -359,11 +359,11 @@ src/components/ops/QueueLengthChart.tsx
 #### Task 5.1: Auto-Refresh Implementation
 **Time**: 1 hour
 
-- [ ] Create `src/lib/hooks/useAutoRefresh.ts`
-- [ ] Implement auto-refresh toggle in PageHeader
-- [ ] Add refresh button for manual refresh
-- [ ] Add last updated timestamp
-- [ ] Ensure auto-refresh doesn't block UI
+- [x] Create `src/lib/hooks/useAutoRefresh.ts`
+- [x] Implement auto-refresh toggle in PageHeader
+- [x] Add refresh button for manual refresh
+- [x] Add last updated timestamp
+- [x] Ensure auto-refresh doesn't block UI
 
 **Files to Create**:
 ```
@@ -381,11 +381,11 @@ src/lib/hooks/useAutoRefresh.ts
 #### Task 5.2: Error Handling
 **Time**: 1 hour
 
-- [ ] Add error boundaries to all sections
-- [ ] Implement retry logic for failed requests
-- [ ] Show "Stale Data" warning when backend is down
-- [ ] Add loading skeletons for all components
-- [ ] Handle partial data failures gracefully
+- [x] Add error boundaries to all sections
+- [x] Implement retry logic for failed requests
+- [x] Show "Stale Data" warning when backend is down
+- [x] Add loading skeletons for all components
+- [x] Handle partial data failures gracefully
 
 **Acceptance Criteria**:
 - Errors display user-friendly messages
@@ -398,11 +398,11 @@ src/lib/hooks/useAutoRefresh.ts
 #### Task 5.3: Responsive Design
 **Time**: 30 minutes
 
-- [ ] Test on desktop (1920x1080)
-- [ ] Test on tablet (768px)
-- [ ] Test on mobile (375px)
-- [ ] Adjust grid columns for breakpoints
-- [ ] Ensure charts are responsive
+- [x] Test on desktop (1920x1080)
+- [x] Test on tablet (768px)
+- [x] Test on mobile (375px)
+- [x] Adjust grid columns for breakpoints
+- [x] Ensure charts are responsive
 
 **Acceptance Criteria**:
 - Desktop: 3-4 column grid
@@ -415,17 +415,40 @@ src/lib/hooks/useAutoRefresh.ts
 #### Task 5.4: Accessibility
 **Time**: 30 minutes
 
-- [ ] Add ARIA labels to all metrics
-- [ ] Add ARIA live regions for auto-updating data
-- [ ] Test keyboard navigation
-- [ ] Test screen reader support
-- [ ] Ensure color contrast meets WCAG AA
+- [x] Add ARIA labels to all metrics
+- [x] Add ARIA live regions for auto-updating data
+- [x] Test keyboard navigation
+- [x] Test screen reader support
+- [x] Ensure color contrast meets WCAG AA
 
 **Acceptance Criteria**:
 - All interactive elements keyboard accessible
 - Screen reader announces updates
 - Color contrast passes WCAG AA
 - No accessibility violations in axe DevTools
+
+---
+
+#### Task 5.5: Unit Testing
+**Time**: 1 hour
+
+- [x] Write unit tests for opsStore
+- [x] Test time range management
+- [x] Test auto-refresh toggle
+- [x] Test module filter
+- [x] Test state persistence
+- [x] Achieve 100% test coverage for store
+
+**Files Created**:
+```
+src/stores/__tests__/opsStore.test.ts
+```
+
+**Acceptance Criteria**:
+- All store actions tested
+- 10+ unit tests passing
+- 100% code coverage for store
+- Tests run in <100ms
 
 ---
 

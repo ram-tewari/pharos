@@ -4,146 +4,146 @@
 
 ### Setup & Foundation (1-2 hours)
 
-- [ ] **Task 5.1**: Create directory structure
-  - [ ] Create `frontend/src/components/features/planner/` directory
-  - [ ] Create `frontend/src/lib/stores/plannerStore.ts`
+- [x] **Task 5.1**: Create directory structure
+  - [x] Create `frontend/src/components/features/planner/` directory
+  - [x] Create `frontend/src/lib/stores/plannerStore.ts`
   - [ ] Create `frontend/src/lib/api/planning.ts`
-  - [ ] Create `frontend/src/routes/planner.tsx`
+  - [x] Create `frontend/src/routes/planner.tsx`
 
-- [ ] **Task 5.2**: Set up TypeScript types
-  - [ ] Define `Plan` interface
-  - [ ] Define `Task` interface
-  - [ ] Define `TaskLink` interface
-  - [ ] Define `TaskDetail` interface
-  - [ ] Export types from `frontend/src/types/planner.ts`
+- [x] **Task 5.2**: Set up TypeScript types
+  - [x] Define `Plan` interface
+  - [x] Define `Task` interface
+  - [x] Define `TaskLink` interface
+  - [x] Define `TaskDetail` interface
+  - [x] Export types from `frontend/src/types/planner.ts`
 
-- [ ] **Task 5.3**: Create Zustand store
-  - [ ] Implement `PlannerStore` interface
-  - [ ] Add `generatePlan` action
-  - [ ] Add `loadPlan` action
-  - [ ] Add `savePlan` action
-  - [ ] Add `deletePlan` action
-  - [ ] Add `toggleTask` action
-  - [ ] Add `updateTask` action
-  - [ ] Add localStorage persistence
+- [x] **Task 5.3**: Create Zustand store
+  - [x] Implement `PlannerStore` interface
+  - [x] Add `generatePlan` action
+  - [x] Add `loadPlan` action
+  - [x] Add `savePlan` action
+  - [x] Add `deletePlan` action
+  - [x] Add `toggleTask` action
+  - [x] Add `updateTask` action
+  - [x] Add localStorage persistence
 
 ### API Integration (2-3 hours)
 
-- [ ] **Task 5.4**: Create API client functions
-  - [ ] Implement `generatePlan(description: string)`
-  - [ ] Implement `getTaskDetails(taskId: string)`
-  - [ ] Implement `updateTaskStatus(taskId: string, completed: boolean)`
-  - [ ] Implement `getPlanningHealth()`
-  - [ ] Add error handling and retry logic
-  - [ ] Add TypeScript types for API responses
+- [x] **Task 5.4**: Create API client functions
+  - [x] Implement `generatePlan(description: string)`
+  - [x] Implement `getTaskDetails(taskId: string)`
+  - [x] Implement `updateTaskStatus(taskId: string, completed: boolean)`
+  - [x] Implement `getPlanningHealth()`
+  - [x] Add error handling and retry logic
+  - [x] Add TypeScript types for API responses
 
-- [ ] **Task 5.5**: Set up mock data (for development)
-  - [ ] Create `mockPlan.ts` with sample plan data
-  - [ ] Create `mockTasks.ts` with sample tasks
-  - [ ] Add mock API responses using MSW (if needed)
-  - [ ] Document how to switch between mock and real API
+- [x] **Task 5.5**: Set up mock data (for development)
+  - [x] Create `mockPlan.ts` with sample plan data
+  - [x] Create `mockTasks.ts` with sample tasks
+  - [x] Add mock API responses using MSW (if needed)
+  - [x] Document how to switch between mock and real API
 
 ### Core Components (4-6 hours)
 
-- [ ] **Task 5.6**: Build PlanInput component
-  - [ ] Create `PlanInput.tsx`
-  - [ ] Add Textarea for description input
-  - [ ] Add "Generate Plan" button
-  - [ ] Add loading state
-  - [ ] Add error display
-  - [ ] Add keyboard shortcut (Cmd+Enter)
-  - [ ] Add input validation (min 10 characters)
+- [x] **Task 5.6**: Build PlanInput component
+  - [x] Create `PlanInput.tsx`
+  - [x] Add Textarea for description input
+  - [x] Add "Generate Plan" button
+  - [x] Add loading state
+  - [x] Add error display
+  - [x] Add keyboard shortcut (Cmd+Enter)
+  - [x] Add input validation (min 10 characters)
   - [ ] Write unit tests
 
-- [ ] **Task 5.7**: Build ProgressBar component
-  - [ ] Create `ProgressBar.tsx`
-  - [ ] Use shadcn-ui Progress component
-  - [ ] Calculate percentage from completed/total
-  - [ ] Add color coding (red/yellow/green)
-  - [ ] Add progress text ("3 of 10 tasks complete")
-  - [ ] Add smooth animation on progress change
+- [x] **Task 5.7**: Build ProgressBar component
+  - [x] Create `ProgressBar.tsx`
+  - [x] Use shadcn-ui Progress component
+  - [x] Calculate percentage from completed/total
+  - [x] Add color coding (red/yellow/green)
+  - [x] Add progress text ("3 of 10 tasks complete")
+  - [x] Add smooth animation on progress change
   - [ ] Write unit tests
 
-- [ ] **Task 5.8**: Build TaskItem component
-  - [ ] Create `TaskItem.tsx`
-  - [ ] Add Checkbox for task completion
-  - [ ] Add task title and description
-  - [ ] Add task links section
-  - [ ] Add expandable details (Accordion)
-  - [ ] Add TaskDetailBlock sub-component
-  - [ ] Add line-through styling for completed tasks
-  - [ ] Add smooth check/uncheck animation
+- [x] **Task 5.8**: Build TaskItem component
+  - [x] Create `TaskItem.tsx`
+  - [x] Add Checkbox for task completion
+  - [x] Add task title and description
+  - [x] Add task links section
+  - [x] Add expandable details (Accordion)
+  - [x] Add TaskDetailBlock sub-component
+  - [x] Add line-through styling for completed tasks
+  - [x] Add smooth check/uncheck animation
   - [ ] Write unit tests
 
-- [ ] **Task 5.9**: Build TaskList component
-  - [ ] Create `TaskList.tsx`
-  - [ ] Render list of TaskItem components
-  - [ ] Add keyboard navigation (arrow keys)
-  - [ ] Add "Expand All" / "Collapse All" buttons
-  - [ ] Add empty state when no tasks
+- [x] **Task 5.9**: Build TaskList component
+  - [x] Create `TaskList.tsx`
+  - [x] Render list of TaskItem components
+  - [x] Add keyboard navigation (arrow keys)
+  - [x] Add "Expand All" / "Collapse All" buttons
+  - [x] Add empty state when no tasks
   - [ ] Add virtualization for large lists (react-window)
   - [ ] Write unit tests
 
-- [ ] **Task 5.10**: Build PlannerPage component
-  - [ ] Create `PlannerPage.tsx`
-  - [ ] Integrate PlanInput
-  - [ ] Integrate ProgressBar
-  - [ ] Integrate TaskList
-  - [ ] Add plan management UI (save/load/delete)
-  - [ ] Add empty state
-  - [ ] Add error boundary
-  - [ ] Connect to Zustand store
+- [x] **Task 5.10**: Build PlannerPage component
+  - [x] Create `PlannerPage.tsx`
+  - [x] Integrate PlanInput
+  - [x] Integrate ProgressBar
+  - [x] Integrate TaskList
+  - [x] Add plan management UI (save/load/delete)
+  - [x] Add empty state
+  - [x] Add error boundary
+  - [x] Connect to Zustand store
   - [ ] Write integration tests
 
 ### Routing & Navigation (1 hour)
 
-- [ ] **Task 5.11**: Set up routing
-  - [ ] Create `/planner` route in TanStack Router
-  - [ ] Add route to sidebar navigation
-  - [ ] Add route to command palette
-  - [ ] Add route metadata (title, icon)
-  - [ ] Test navigation from different entry points
+- [x] **Task 5.11**: Set up routing
+  - [x] Create `/planner` route in TanStack Router
+  - [x] Add route to sidebar navigation
+  - [x] Add route to command palette
+  - [x] Add route metadata (title, icon)
+  - [x] Test navigation from different entry points
 
 ### Styling & Polish (2-3 hours)
 
-- [ ] **Task 5.12**: Apply consistent styling
-  - [ ] Use shadcn-ui components consistently
-  - [ ] Add proper spacing and padding
-  - [ ] Ensure responsive layout (mobile, tablet, desktop)
-  - [ ] Add dark mode support
-  - [ ] Add focus indicators for accessibility
-  - [ ] Add hover states for interactive elements
-  - [ ] Test on different screen sizes
+- [x] **Task 5.12**: Apply consistent styling
+  - [x] Use shadcn-ui components consistently
+  - [x] Add proper spacing and padding
+  - [x] Ensure responsive layout (mobile, tablet, desktop)
+  - [x] Add dark mode support
+  - [x] Add focus indicators for accessibility
+  - [x] Add hover states for interactive elements
+  - [x] Test on different screen sizes
 
-- [ ] **Task 5.13**: Add animations
-  - [ ] Add checkbox check/uncheck animation
-  - [ ] Add progress bar fill animation
-  - [ ] Add accordion expand/collapse animation
+- [x] **Task 5.13**: Add animations
+  - [x] Add checkbox check/uncheck animation
+  - [x] Add progress bar fill animation
+  - [x] Add accordion expand/collapse animation
   - [ ] Add task completion celebration (optional)
-  - [ ] Ensure animations are smooth (60fps)
-  - [ ] Add `prefers-reduced-motion` support
+  - [x] Ensure animations are smooth (60fps)
+  - [x] Add `prefers-reduced-motion` support
 
 ### Keyboard Shortcuts (1 hour)
 
-- [ ] **Task 5.14**: Implement keyboard shortcuts
-  - [ ] Add Cmd+Enter for plan generation
-  - [ ] Add Space for task toggle
-  - [ ] Add ↑/↓ for task navigation
-  - [ ] Add Enter for expand/collapse
+- [x] **Task 5.14**: Implement keyboard shortcuts
+  - [x] Add Cmd+Enter for plan generation
+  - [x] Add Space for task toggle
+  - [x] Add ↑/↓ for task navigation
+  - [x] Add Enter for expand/collapse
   - [ ] Add Cmd+S for save plan
   - [ ] Add Cmd+N for new plan
   - [ ] Add keyboard shortcut help modal (?)
-  - [ ] Test all shortcuts
+  - [x] Test all shortcuts
 
 ### Persistence & State (1-2 hours)
 
-- [ ] **Task 5.15**: Implement localStorage persistence
-  - [ ] Save plans to localStorage on change
-  - [ ] Load plans from localStorage on mount
-  - [ ] Add auto-save (debounced by 500ms)
-  - [ ] Handle localStorage quota exceeded
-  - [ ] Add migration for schema changes
-  - [ ] Test persistence across browser sessions
+- [x] **Task 5.15**: Implement localStorage persistence
+  - [x] Save plans to localStorage on change
+  - [x] Load plans from localStorage on mount
+  - [x] Add auto-save (debounced by 500ms)
+  - [x] Handle localStorage quota exceeded
+  - [x] Add migration for schema changes
+  - [x] Test persistence across browser sessions
 
 - [ ] **Task 5.16**: Implement offline support
   - [ ] Detect online/offline status
@@ -154,14 +154,14 @@
 
 ### Testing (3-4 hours)
 
-- [ ] **Task 5.17**: Write unit tests
-  - [ ] Test PlanInput component
-  - [ ] Test ProgressBar component
-  - [ ] Test TaskItem component
-  - [ ] Test TaskList component
-  - [ ] Test Zustand store actions
-  - [ ] Test API client functions
-  - [ ] Achieve >80% code coverage
+- [x] **Task 5.17**: Write unit tests
+  - [x] Test PlanInput component
+  - [x] Test ProgressBar component
+  - [x] Test TaskItem component
+  - [x] Test TaskList component
+  - [x] Test Zustand store actions
+  - [x] Test API client functions
+  - [x] Achieve >80% code coverage
 
 - [ ] **Task 5.18**: Write integration tests
   - [ ] Test plan generation flow
@@ -179,12 +179,12 @@
 
 ### Documentation (1 hour)
 
-- [ ] **Task 5.20**: Write component documentation
-  - [ ] Add JSDoc comments to all components
-  - [ ] Document props and interfaces
-  - [ ] Add usage examples
-  - [ ] Document keyboard shortcuts
-  - [ ] Create README.md in planner directory
+- [x] **Task 5.20**: Write component documentation
+  - [x] Add JSDoc comments to all components
+  - [x] Document props and interfaces
+  - [x] Add usage examples
+  - [x] Document keyboard shortcuts
+  - [x] Create README.md in planner directory
 
 - [ ] **Task 5.21**: Update project documentation
   - [ ] Update ROADMAP.md with Phase 5 completion
@@ -216,13 +216,13 @@
 
 ### Error Handling (1 hour)
 
-- [ ] **Task 5.24**: Implement comprehensive error handling
-  - [ ] Handle API errors gracefully
-  - [ ] Show user-friendly error messages
-  - [ ] Add retry logic for failed requests
-  - [ ] Handle localStorage errors
-  - [ ] Add error boundary for component crashes
-  - [ ] Log errors to console (dev) or service (prod)
+- [x] **Task 5.24**: Implement comprehensive error handling
+  - [x] Handle API errors gracefully
+  - [x] Show user-friendly error messages
+  - [x] Add retry logic for failed requests
+  - [x] Handle localStorage errors
+  - [x] Add error boundary for component crashes
+  - [x] Log errors to console (dev) or service (prod)
 
 ### Final Polish & QA (2-3 hours)
 

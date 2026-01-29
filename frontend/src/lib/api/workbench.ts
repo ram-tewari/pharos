@@ -72,7 +72,7 @@ export const workbenchApi = {
    * @endpoint GET /resources
    */
   getResources: async (params?: ResourceListParams): Promise<Resource[]> => {
-    const response = await apiClient.get('/resources', { params });
+    const response = await apiClient.get('/api/resources', { params });
     const validated = validateResponseStrict(response.data, ResourceListResponseSchema, 'GET /resources');
     return validated.items;
   },

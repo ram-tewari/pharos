@@ -83,7 +83,7 @@ export const libraryApi = {
     }
     
     // Make request with progress tracking
-    const response = await apiClient.post<Resource>('/resources', formData, {
+    const response = await apiClient.post<Resource>('/api/resources', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -130,7 +130,7 @@ export const libraryApi = {
     limit?: number;
     offset?: number;
   }): Promise<ResourceListResponse> => {
-    const response = await apiClient.get<ResourceListResponse>('/resources', {
+    const response = await apiClient.get<ResourceListResponse>('/api/resources', {
       params,
     });
     

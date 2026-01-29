@@ -40,7 +40,7 @@ from .service import QualityService
 from .evaluator import SummarizationEvaluator
 
 
-router = APIRouter(prefix="", tags=["quality"])
+router = APIRouter(prefix="/api/quality", tags=["quality"])
 
 
 def _get_quality_service(db: Session) -> QualityService:

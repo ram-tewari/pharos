@@ -166,6 +166,15 @@ class MonitoringService:
                 "status": "error",
                 "error": str(e),
                 "timestamp": datetime.utcnow().isoformat(),
+                "time_window_days": time_window_days,
+                "metrics": {
+                    "total_recommendations": 0,
+                    "total_clicked": 0,
+                    "ctr_overall": 0.0,
+                    "ctr_by_strategy": {},
+                    "user_satisfaction": 0.0,
+                    "feedback_count": 0,
+                },
             }
 
     async def get_user_engagement_metrics(

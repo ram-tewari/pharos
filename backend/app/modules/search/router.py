@@ -48,7 +48,7 @@ from ...database.models import Resource
 from .service import SearchService
 
 
-router = APIRouter(prefix="", tags=["search"])
+router = APIRouter(prefix="/api/search", tags=["search"])
 
 
 @router.post("/search", response_model=SearchResults, status_code=status.HTTP_200_OK)

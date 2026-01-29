@@ -56,11 +56,11 @@ const DEFAULT_FILTERS: DocumentFiltersState = {
 };
 
 export function DocumentFilters({
-  filters,
-  onFiltersChange,
+  filters = DEFAULT_FILTERS,
+  onFiltersChange = () => {},
   className,
-}: DocumentFiltersProps) {
-  const [localSearch, setLocalSearch] = useState(filters.search);
+}: Partial<DocumentFiltersProps> = {}) {
+  const [localSearch, setLocalSearch] = useState(filters.search || '');
 
   // Debounce search input
   useEffect(() => {

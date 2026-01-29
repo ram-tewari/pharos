@@ -60,7 +60,7 @@ export function WorkbenchLayout({ children }: WorkbenchLayoutProps) {
         <WorkbenchHeader />
         
         <main className="flex-1 overflow-auto">
-          <div className="container mx-auto p-6">
+          <div className="container mx-auto p-6 space-y-4">
             {children}
           </div>
         </main>

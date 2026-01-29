@@ -13,20 +13,37 @@ import { RelatedPapersPanel } from './RelatedPapersPanel';
 import { useDocuments } from '@/lib/hooks/useDocuments';
 import { useCollectionsStore } from '@/stores/collections';
 import { usePDFViewerStore } from '@/stores/pdfViewer';
+import { libraryApi } from '@/lib/api/library';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BookOpen, Grid3x3, FolderOpen, Upload } from 'lucide-react';
+import { toast } from 'sonner';
 import type { Document } from '@/types/library';
 
 export function LibraryPage() {
   const [activeView, setActiveView] = useState<'grid' | 'collections'>('grid');
   const [showUpload, setShowUpload] = useState(false);
   
-  const { documents, isLoading, error } = useDocuments();
+  const { documents, isLoading, error, refetch } = useDocuments();
   const batchMode = useCollectionsStore((state) => state.batchMode);
   const currentDocument = usePDFViewerStore((state) => state.currentDocument);
+
+  const handleUpload = async (files: File[]) => {
+    try {
+      // Upload files to backend
+      for (const file of files) {
+        await libraryApi.uploadResource(file);
+      }
+      toast.success(`Successfully uploaded ${files.length} file(s)`);
+      refetch(); // Refresh document list
+      setShowUpload(false);
+    } catch (error) {
+      toast.error('Upload failed: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      throw error;
+    }
+  };
 
   const handleDocumentSelect = (document: Document) => {
     usePDFViewerStore.getState().setCurrentDocument(document);
@@ -166,8 +183,7 @@ export function LibraryPage() {
       {/* Upload Dialog */}
       {showUpload && (
         <DocumentUpload
-          open={showUpload}
-          onOpenChange={setShowUpload}
+          onUpload={handleUpload}
         />
       )}
     </div>

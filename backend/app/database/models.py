@@ -146,7 +146,6 @@ class Resource(Base):
         nullable=True,
     )
 
-    # Phase 8: Sparse vector embeddings for three-way hybrid search
     sparse_embedding: Mapped[str | None] = mapped_column(Text, nullable=True)
     sparse_embedding_model: Mapped[str | None] = mapped_column(
         String(100), nullable=True
@@ -155,7 +154,6 @@ class Resource(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    # Phase 13: PostgreSQL full-text search vector
     search_vector: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Phase 6.5: Scholarly Metadata Fields
@@ -196,7 +194,6 @@ class Resource(Base):
         Boolean, nullable=False, default=False, server_default="false"
     )
 
-    # Phase 9: Enhanced Quality Control Fields
     quality_accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)
     quality_completeness: Mapped[float | None] = mapped_column(Float, nullable=True)
     quality_consistency: Mapped[float | None] = mapped_column(Float, nullable=True)

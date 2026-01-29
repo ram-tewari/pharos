@@ -136,7 +136,6 @@ class Settings(BaseSettings):
     PARENT_CHILD_CONTEXT_WINDOW: int = 2  # Number of surrounding chunks to include
     GRAPHRAG_MAX_HOPS: int = 2  # Maximum graph traversal depth
 
-    # Phase 19 - Hybrid Edge-Cloud Orchestration
     MODE: Literal["CLOUD", "EDGE"] = "CLOUD"  # Deployment mode
     
     # Upstash Redis (for task queue and status tracking)

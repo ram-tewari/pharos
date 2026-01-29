@@ -69,7 +69,6 @@ def register_all_modules(app: FastAPI) -> None:
         ("collections", "app.modules.collections", ["collections_router"]),
         ("resources", "app.modules.resources", ["resources_router"]),
         ("search", "app.modules.search", ["search_router"]),
-        # Phase 14 modules (completed)
         ("annotations", "app.modules.annotations", ["annotations_router"]),
         ("scholarly", "app.modules.scholarly", ["scholarly_router"]),
         ("authority", "app.modules.authority", ["authority_router"]),
@@ -81,9 +80,7 @@ def register_all_modules(app: FastAPI) -> None:
             "app.modules.graph",
             ["graph_router", "citations_router", "discovery_router"],
         ),
-        # Phase 17 modules (in progress)
         ("auth", "app.modules.auth", ["router"]),
-        # Phase 20 modules (in progress)
         ("planning", "app.modules.planning", ["router"]),
         ("mcp", "app.modules.mcp", ["router"]),
     ]
@@ -275,7 +272,12 @@ def create_app() -> FastAPI:
     # Add CORS middleware to allow frontend connections
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Allow all origins for development
+        allow_origins=[
+            "http://localhost:3000",
+            "http://localhost:5173", 
+            "https://pharos.onrender.com",
+            "*"
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

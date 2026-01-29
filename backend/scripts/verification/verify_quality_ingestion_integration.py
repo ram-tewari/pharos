@@ -61,9 +61,9 @@ def verify_integration():
     # Find the positions of key sections
     ml_classification_pos = content.find("# Phase 8.5: ML Classification")
     quality_assessment_pos = content.find(
-        "# Phase 9: Multi-dimensional quality assessment"
+        "
     )
-    citation_extraction_pos = content.find("# Phase 6: Extract citations")
+    citation_extraction_pos = content.find("
 
     if ml_classification_pos == -1:
         print("  ⚠ ML Classification section not found (might be expected)")
@@ -89,7 +89,7 @@ def verify_integration():
 
     # Find the commit before quality assessment
     quality_section_start = content.find(
-        "# Phase 9: Multi-dimensional quality assessment"
+        "
     )
     preceding_content = content[:quality_section_start]
 

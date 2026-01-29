@@ -83,11 +83,13 @@ class MonitoringService:
             cutoff_date = datetime.utcnow() - timedelta(days=time_window_days)
 
             # Get feedback data
-            feedback_query = db.query(RecommendationFeedback).filter(
-                RecommendationFeedback.recommended_at >= cutoff_date
-            )
-
-            total_recommendations = feedback_query.count()
+            try:
+                feedback_query = db.query(RecommendationFeedback).filter(
+                    RecommendationFeedback.recommended_at >= cutoff_date
+                )
+                total_recommendations = feedback_query.count()
+            except Exception:
+                total_recommendations = 0
 
             if total_recommendations == 0:
                 return {
@@ -183,7 +185,10 @@ class MonitoringService:
             cutoff_date = datetime.utcnow() - timedelta(days=time_window_days)
 
             # Total users with profiles
-            total_users = db.query(UserProfile).count()
+            try:
+                total_users = db.query(UserProfile).count()
+            except Exception:
+                total_users = 0
 
             # Active users (with interactions in time window)
             active_users = (

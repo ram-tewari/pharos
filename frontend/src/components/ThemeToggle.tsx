@@ -1,4 +1,4 @@
-import { Moon, Sun, Monitor } from 'lucide-react';
+import { Moon, Sun, Monitor, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -26,23 +26,23 @@ export function ThemeToggle() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9"
+          className="h-9 w-9 transition-all duration-200 hover:rotate-12"
           aria-label="Toggle theme"
         >
-          <Icon className="h-4 w-4" />
+          <Icon className="h-4 w-4 transition-transform" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-36">
+      <DropdownMenuContent align="end" className="w-40 animate-slide-in-from-top">
         {themes.map(({ value, label, icon: ThemeIcon }) => (
           <DropdownMenuItem
             key={value}
             onClick={() => setTheme(value)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 cursor-pointer"
           >
             <ThemeIcon className="h-4 w-4" />
-            <span>{label}</span>
+            <span className="flex-1">{label}</span>
             {theme === value && (
-              <span className="ml-auto text-xs">✓</span>
+              <Check className="h-4 w-4 text-primary" />
             )}
           </DropdownMenuItem>
         ))}

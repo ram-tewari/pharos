@@ -33,7 +33,6 @@ MODEL_FIELDS = {
         "classification_code",
         "read_status",
         "quality_score",
-        # Phase 9: Multi-Dimensional Quality Assessment Fields
         "quality_accuracy",
         "quality_completeness",
         "quality_consistency",
@@ -65,7 +64,6 @@ MODEL_FIELDS = {
         "ingestion_completed_at",
         # Vector embedding for Phase 4 hybrid search
         "embedding",
-        # Phase 8: Sparse vector embeddings
         "sparse_embedding",
         "sparse_embedding_model",
         "sparse_embedding_updated_at",

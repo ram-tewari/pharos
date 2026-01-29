@@ -55,6 +55,23 @@ Contains:
 - Understanding component relationships
 - Locating implementation files
 
+### `frontend-polish.md` - UI/UX Standards
+**When to read**: Implementing or reviewing frontend features
+
+Contains:
+- Comprehensive visual design system (colors, typography, spacing)
+- Component-level excellence guidelines (forms, buttons, cards, tables)
+- Accessibility and responsive design standards
+- Animation and micro-interaction patterns
+- Performance optimization techniques
+- Pharos-specific enhancements for each phase
+
+**Use cases**:
+- Frontend feature implementation
+- UI/UX review and polish
+- Design system consistency checks
+- Accessibility compliance verification
+
 ## Documentation Hierarchy
 
 ```
@@ -63,6 +80,7 @@ Contains:
 │ ├── AGENTS.md - Routing rules                          │
 │ ├── product.md - What we're building                   │
 │ ├── tech.md - How we're building it                    │
+│ ├── frontend-polish.md - UI/UX standards               │
 │ └── structure.md - Where things are                    │
 └─────────────────────────────────────────────────────────┘
                           ↓

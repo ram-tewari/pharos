@@ -39,15 +39,15 @@ export function ErrorMessage({
   const getSeverityStyles = () => {
     switch (error.severity) {
       case 'low':
-        return 'bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100';
+        return 'bg-[hsl(var(--info))]/10 border-[hsl(var(--info))]/50 text-[hsl(var(--info))]';
       case 'medium':
-        return 'bg-yellow-50 border-yellow-200 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-100';
+        return 'bg-[hsl(var(--warning))]/10 border-[hsl(var(--warning))]/50 text-[hsl(var(--warning))]';
       case 'high':
-        return 'bg-orange-50 border-orange-200 text-orange-900 dark:bg-orange-950 dark:border-orange-800 dark:text-orange-100';
+        return 'bg-destructive/10 border-destructive/50 text-destructive';
       case 'critical':
-        return 'bg-red-50 border-red-200 text-red-900 dark:bg-red-950 dark:border-red-800 dark:text-red-100';
+        return 'bg-destructive/20 border-destructive text-destructive animate-shake';
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-900 dark:bg-gray-950 dark:border-gray-800 dark:text-gray-100';
+        return 'bg-muted border-border text-foreground';
     }
   };
 
@@ -56,7 +56,7 @@ export function ErrorMessage({
       <div
         role="alert"
         className={cn(
-          'flex items-center gap-2 text-sm',
+          'flex items-center gap-2 text-sm transition-all duration-200',
           getSeverityStyles(),
           className
         )}
@@ -71,7 +71,7 @@ export function ErrorMessage({
     <div
       role="alert"
       className={cn(
-        'rounded-lg border p-4',
+        'rounded-lg border p-4 shadow-sm transition-all duration-200',
         getSeverityStyles(),
         className
       )}
@@ -84,7 +84,7 @@ export function ErrorMessage({
         )}
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-sm mb-1">{formatted.title}</h3>
-          <p className="text-sm opacity-90">{formatted.message}</p>
+          <p className="text-sm opacity-90 leading-relaxed">{formatted.message}</p>
         </div>
       </div>
     </div>

@@ -866,7 +866,6 @@ def generate_global_overview(
     return _build_global_graph_from_pairs(top_pairs, resources_by_id)
 
 
-# Phase 10: Multi-layer Graph Construction
 class GraphService:
     """Service for Phase 10 multi-layer graph construction and neighbor discovery."""
 
@@ -1325,7 +1324,6 @@ class GraphService:
         return results
 
 
-# Phase 20: Community Detection Service
 class CommunityDetectionService:
     """
     Service for detecting communities in knowledge graphs using Louvain algorithm.
@@ -2123,7 +2121,6 @@ class GraphExtractionService:
         return []
 
 
-# Phase 20: Graph Visualization Service
 class GraphVisualizationService:
     """
     Service for computing graph layouts for visualization.

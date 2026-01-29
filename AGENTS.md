@@ -19,6 +19,7 @@ AGENTS.md (this file)          # Routing and hygiene rules
 .kiro/steering/
   ├── product.md               # Product vision and goals
   ├── tech.md                  # Tech stack and constraints
+  ├── frontend-polish.md       # UI/UX standards and checklist
   └── structure.md             # Repo map and truth sources
 .kiro/specs/
   ├── [feature-name]/          # Active feature specs
@@ -41,6 +42,9 @@ frontend/                      # Frontend-specific docs
 
 ### For Tech Stack Questions
 → Read `.kiro/steering/tech.md`
+
+### For Frontend/UI Questions
+→ Read `.kiro/steering/frontend-polish.md`
 
 ### For Repo Navigation
 → Read `.kiro/steering/structure.md`
@@ -95,6 +99,7 @@ Follow the spec workflow:
 |------|------|
 | What is this project? | `.kiro/steering/product.md` |
 | What tech do we use? | `.kiro/steering/tech.md` |
+| How do I make UI stunning? | `.kiro/steering/frontend-polish.md` |
 | Where is X located? | `.kiro/steering/structure.md` |
 | How do I implement Y? | `.kiro/specs/[feature]/design.md` |
 | What's the API? | `backend/docs/index.md` → `api/` |

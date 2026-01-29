@@ -2,6 +2,7 @@ import { Outlet, createRootRoute } from '@tanstack/react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from '@/app/providers/ThemeProvider';
+import { AuthProvider } from '@/app/providers/AuthProvider';
 import { CommandPalette } from '@/components/CommandPalette';
 import { useGlobalKeyboard } from '@/lib/hooks/useGlobalKeyboard';
 
@@ -33,11 +34,13 @@ const RootComponent = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Outlet />
-        <CommandPalette />
-        <Toaster />
-      </ThemeProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <Outlet />
+          <CommandPalette />
+          <Toaster />
+        </ThemeProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 };

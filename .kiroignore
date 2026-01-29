@@ -1,0 +1,25 @@
+# Kiro IDE Context Exclusions
+# Prevent large documentation files from auto-loading
+
+# Steering documentation (load on-demand only)
+.kiro/steering/
+
+# Feature specifications (load specific specs only)
+.kiro/specs/
+
+# Backend documentation (reference by path)
+backend/docs/
+
+# Large generated files
+*.log
+*.db
+*.sqlite
+*.pyc
+__pycache__/
+node_modules/
+.git/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/

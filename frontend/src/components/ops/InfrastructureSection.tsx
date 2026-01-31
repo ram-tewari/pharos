@@ -93,9 +93,9 @@ export function InfrastructureSection({
                 />
                 <MetricCard
                   title="Latency (P95)"
-                  value={eventBus.event_latency_ms.p95}
+                  value={eventBus?.event_latency_ms?.p95 ?? '-'}
                   unit="ms"
-                  status={eventBus.event_latency_ms.p95 > 1 ? 'warning' : 'success'}
+                  status={eventBus?.event_latency_ms?.p95 && eventBus.event_latency_ms.p95 > 1 ? 'warning' : 'success'}
                 />
                 <MetricCard
                   title="Failed Deliveries"

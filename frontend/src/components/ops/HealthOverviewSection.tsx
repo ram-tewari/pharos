@@ -54,10 +54,10 @@ export function HealthOverviewSection({ health, performance }: HealthOverviewSec
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           title="API Response Time (P95)"
-          value={performance?.api_response_time.p95 ?? '-'}
+          value={performance?.api_response_time?.p95 ?? '-'}
           unit="ms"
           icon={<Activity className="h-4 w-4 text-muted-foreground" />}
-          status={performance && performance.api_response_time.p95 > 500 ? 'warning' : 'success'}
+          status={performance?.api_response_time?.p95 && performance.api_response_time.p95 > 500 ? 'warning' : 'success'}
         />
         
         <MetricCard

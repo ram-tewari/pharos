@@ -86,7 +86,7 @@ export function LowQualityView() {
             <div className="p-6 text-center text-muted-foreground">
               Loading low-quality resources...
             </div>
-          ) : data && data.items.length > 0 ? (
+          ) : data?.items && data.items.length > 0 ? (
             <ReviewQueueTable data={data.items} total={data.total} />
           ) : (
             <div className="p-6 text-center text-muted-foreground">

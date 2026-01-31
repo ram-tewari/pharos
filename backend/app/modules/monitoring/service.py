@@ -95,6 +95,7 @@ class MonitoringService:
                 return {
                     "status": "ok",
                     "message": "No recommendation data available",
+                    "timestamp": datetime.utcnow().isoformat(),
                     "time_window_days": time_window_days,
                     "metrics": {
                         "total_recommendations": 0,
@@ -197,27 +198,27 @@ class MonitoringService:
 
             # Total users with profiles
             try:
-                result = await db.execute(select(func.count(UserProfile.id)))
+                result = db.execute(select(func.count(UserProfile.id)))
                 total_users = result.scalar() or 0
             except Exception:
                 total_users = 0
 
             # Active users (with interactions in time window)
-            result = await db.execute(
+            result = db.execute(
                 select(func.count(func.distinct(UserInteraction.user_id)))
                 .where(UserInteraction.interaction_timestamp >= cutoff_date)
             )
             active_users = result.scalar() or 0
 
             # Total interactions
-            result = await db.execute(
+            result = db.execute(
                 select(func.count(UserInteraction.id))
                 .where(UserInteraction.interaction_timestamp >= cutoff_date)
             )
             total_interactions = result.scalar() or 0
 
             # Interactions by type
-            result = await db.execute(
+            result = db.execute(
                 select(
                     UserInteraction.interaction_type,
                     func.count(UserInteraction.id).label("count"),
@@ -232,11 +233,11 @@ class MonitoringService:
             }
 
             # Average session duration
-            result = await db.execute(select(func.avg(UserProfile.avg_session_duration)))
+            result = db.execute(select(func.avg(UserProfile.avg_session_duration)))
             avg_session = result.scalar() or 0.0
 
             # Positive interaction rate
-            result = await db.execute(
+            result = db.execute(
                 select(func.count(UserInteraction.id))
                 .where(
                     UserInteraction.interaction_timestamp >= cutoff_date,

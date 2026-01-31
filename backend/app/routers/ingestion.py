@@ -158,11 +158,10 @@ def verify_admin_token(
     
     # Try JWT token validation
     try:
-        from app.modules.auth.service import AuthService
-        auth_service = AuthService()
+        from app.shared.security import decode_token
         
         # Validate JWT token
-        payload = auth_service.verify_access_token(token)
+        payload = decode_token(token)
         
         # Token is valid, allow access
         logger.info(f"JWT authentication successful for user: {payload.get('sub', 'unknown')}")

@@ -131,10 +131,14 @@ def verify_admin_token(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ) -> str:
     """
-    Verify API admin token for ingestion endpoint.
+    Verify API admin token or JWT token for ingestion endpoint.
     
     This prevents unauthorized users from bombarding the edge worker
     with git clone requests (Risk A: "Open Door" Security Hole).
+    
+    Supports two authentication methods:
+    1. PHAROS_ADMIN_TOKEN (simple token for backward compatibility)
+    2. JWT tokens from OAuth2 authentication system
     
     Args:
         credentials: HTTP Bearer credentials
@@ -145,23 +149,38 @@ def verify_admin_token(
     Raises:
         HTTPException: If token is invalid or missing
     """
+    token = credentials.credentials
+    
+    # Try admin token first (for backward compatibility)
     expected_token = os.getenv("PHAROS_ADMIN_TOKEN")
+    if expected_token and token == expected_token:
+        return token
     
-    if not expected_token:
-        logger.error("PHAROS_ADMIN_TOKEN not configured")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server misconfiguration: PHAROS_ADMIN_TOKEN not set"
-        )
-    
-    if credentials.credentials != expected_token:
-        logger.warning(f"Authentication failure: Invalid token provided")
+    # Try JWT token validation
+    try:
+        from app.modules.auth.service import AuthService
+        auth_service = AuthService()
+        
+        # Validate JWT token
+        payload = auth_service.verify_access_token(token)
+        
+        # Token is valid, allow access
+        logger.info(f"JWT authentication successful for user: {payload.get('sub', 'unknown')}")
+        return token
+        
+    except Exception as jwt_error:
+        logger.warning(f"Authentication failure: Invalid token provided - {jwt_error}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing authentication token"
         )
     
-    return credentials.credentials
+    # If we get here, neither method worked
+    logger.warning(f"Authentication failure: Invalid token provided")
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or missing authentication token"
+    )
 
 
 # URL validation

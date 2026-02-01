@@ -34,7 +34,8 @@ export function StatusBadge({ status, className, showIcon = true }: StatusBadgeP
     },
   };
   
-  const { variant, icon, label } = config[status];
+  const statusConfig = config[status] || config.degraded; // Fallback to degraded if status is unknown
+  const { variant, icon, label } = statusConfig;
   
   return (
     <Badge variant={variant} className={className}>

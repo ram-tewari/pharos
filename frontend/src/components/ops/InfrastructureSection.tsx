@@ -213,7 +213,7 @@ export function InfrastructureSection({
         <CardContent>
           {modelHealth?.models ? (
             <div className="grid gap-4 md:grid-cols-3">
-              {Object.entries(modelHealth.models).map(([name, model]) => (
+              {Object.entries(modelHealth.models || {}).map(([name, model]) => (
                 <Card key={name}>
                   <CardContent className="p-4">
                     <div className="space-y-2">

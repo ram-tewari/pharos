@@ -27,8 +27,8 @@ export function HealthOverviewSection({ health, performance }: HealthOverviewSec
     );
   }
   
-  const healthyCount = Object.values(health.modules).filter(m => m.status === 'healthy').length;
-  const totalCount = Object.keys(health.modules).length;
+  const healthyCount = Object.values(health?.modules || {}).filter(m => m.status === 'healthy').length;
+  const totalCount = Object.keys(health?.modules || {}).length;
   
   return (
     <div className="space-y-4">

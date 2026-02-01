@@ -28,7 +28,7 @@ export function ModuleHealthSection({ health }: ModuleHealthSectionProps) {
     );
   }
   
-  const modules = Object.entries(health.modules).filter(([_, module]) => {
+  const modules = Object.entries(health?.modules || {}).filter(([_, module]) => {
     if (moduleFilter === 'all') return true;
     return module.status === moduleFilter;
   });

@@ -50,8 +50,8 @@ export function InfrastructureSection({
             <div className="grid gap-4 md:grid-cols-3">
               <MetricCard
                 title="Connection Pool"
-                value={`${database.connection_pool.active}/${database.connection_pool.max}`}
-                status={database.connection_pool.utilization > 80 ? 'warning' : 'success'}
+                value={`${database?.connection_pool?.active ?? 0}/${database?.connection_pool?.max ?? 0}`}
+                status={(database?.connection_pool?.utilization ?? 0) > 80 ? 'warning' : 'success'}
               />
               <MetricCard
                 title="Avg Query Time"
@@ -173,9 +173,9 @@ export function InfrastructureSection({
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium">Active Workers</p>
-                  <p className="text-2xl font-bold">{workers.active_workers}</p>
+                  <p className="text-2xl font-bold">{workers?.active_workers ?? 0}</p>
                 </div>
-                <StatusBadge status={workers.worker_health} />
+                <StatusBadge status={workers?.worker_health ?? 'unknown'} />
               </div>
               
               <div className="grid gap-4 md:grid-cols-3">

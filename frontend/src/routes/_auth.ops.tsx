@@ -33,16 +33,56 @@ const OpsPage = () => {
   useAutoRefresh(autoRefresh);
   
   // Fetch all data
-  const { data: health } = useHealthCheck();
-  const { data: performance } = usePerformanceMetrics();
-  const { data: database } = useDatabaseMetrics();
-  const { data: eventBus } = useEventBusMetrics();
-  const { data: eventHistory } = useEventHistory();
-  const { data: cache } = useCacheStats();
-  const { data: workers } = useMonitoringWorkerStatus();
-  const { data: modelHealth } = useModelHealth();
-  const { data: engagement } = useUserEngagement(timeRange);
-  const { data: recommendations } = useRecommendationQuality(timeRange);
+  const { data: health, error: healthError, isLoading: healthLoading } = useHealthCheck();
+  const { data: performance, error: perfError } = usePerformanceMetrics();
+  const { data: database, error: dbError } = useDatabaseMetrics();
+  const { data: eventBus, error: eventError } = useEventBusMetrics();
+  const { data: eventHistory, error: historyError } = useEventHistory();
+  const { data: cache, error: cacheError } = useCacheStats();
+  const { data: workers, error: workersError } = useMonitoringWorkerStatus();
+  const { data: modelHealth, error: modelError } = useModelHealth();
+  const { data: engagement, error: engagementError } = useUserEngagement(timeRange);
+  const { data: recommendations, error: recsError } = useRecommendationQuality(timeRange);
+  
+  // Log errors in development
+  if (import.meta.env.DEV) {
+    if (healthError) console.error('[Ops] Health error:', healthError);
+    if (perfError) console.error('[Ops] Performance error:', perfError);
+    if (dbError) console.error('[Ops] Database error:', dbError);
+    if (eventError) console.error('[Ops] Event bus error:', eventError);
+    if (historyError) console.error('[Ops] Event history error:', historyError);
+    if (cacheError) console.error('[Ops] Cache error:', cacheError);
+    if (workersError) console.error('[Ops] Workers error:', workersError);
+    if (modelError) console.error('[Ops] Model error:', modelError);
+  }
+  
+  if (healthLoading) {
+    return (
+      <OpsLayout>
+        <PageHeader />
+        <div className="flex items-center justify-center h-64">
+          <p className="text-muted-foreground">Loading monitoring data...</p>
+        </div>
+      </OpsLayout>
+    );
+  }
+  
+  if (healthError) {
+    return (
+      <OpsLayout>
+        <PageHeader />
+        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+          <p className="text-destructive">Failed to load monitoring data</p>
+          <p className="text-sm text-muted-foreground">
+            {healthError instanceof Error ? healthError.message : 'Unknown error'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Check console for details or ensure the backend is running
+          </p>
+        </div>
+      </OpsLayout>
+    );
+  }
   
   return (
     <OpsLayout>

@@ -12,7 +12,7 @@ import { StatusBadge } from './StatusBadge';
 import type {
   DatabaseMetrics,
   EventBusMetrics,
-  EventHistoryItem,
+  EventHistoryResponse,
   CacheStats,
   WorkerStatus,
   ModelHealthMetrics,
@@ -21,7 +21,7 @@ import type {
 interface InfrastructureSectionProps {
   database?: DatabaseMetrics;
   eventBus?: EventBusMetrics;
-  eventHistory?: EventHistoryItem[];
+  eventHistory?: EventHistoryResponse;
   cache?: CacheStats;
   workers?: WorkerStatus;
   modelHealth?: ModelHealthMetrics;
@@ -47,23 +47,41 @@ export function InfrastructureSection({
         </CardHeader>
         <CardContent>
           {database ? (
-            <div className="grid gap-4 md:grid-cols-3">
-              <MetricCard
-                title="Connection Pool"
-                value={`${database?.connection_pool?.active ?? 0}/${database?.connection_pool?.max ?? 0}`}
-                status={(database?.connection_pool?.utilization ?? 0) > 80 ? 'warning' : 'success'}
-              />
-              <MetricCard
-                title="Avg Query Time"
-                value={database?.query_performance?.avg_query_time_ms ?? 0}
-                unit="ms"
-                status={(database?.query_performance?.avg_query_time_ms ?? 0) > 100 ? 'warning' : 'success'}
-              />
-              <MetricCard
-                title="Slow Queries"
-                value={database?.query_performance?.slow_queries ?? 0}
-                status={(database?.query_performance?.slow_queries ?? 0) > 10 ? 'warning' : 'success'}
-              />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">{database.database?.type?.toUpperCase() ?? 'Unknown'}</p>
+                  <p className="text-xs text-muted-foreground">{database.database?.health_message}</p>
+                </div>
+                <StatusBadge status={database.database?.healthy ? 'healthy' : 'unhealthy'} />
+              </div>
+              <div className="grid gap-4 md:grid-cols-3">
+                <MetricCard
+                  title="Connection Pool"
+                  value={`${database?.connection_pool?.checked_out ?? 0}/${database?.connection_pool?.pool_size ?? 0}`}
+                  status={(database?.connection_pool?.pool_usage_percent ?? 0) > 80 ? 'warning' : 'success'}
+                />
+                <MetricCard
+                  title="Pool Usage"
+                  value={database?.connection_pool?.pool_usage_percent?.toFixed(1) ?? '0'}
+                  unit="%"
+                  status={(database?.connection_pool?.pool_usage_percent ?? 0) > 80 ? 'warning' : 'success'}
+                />
+                <MetricCard
+                  title="Total Connections"
+                  value={database?.connection_pool?.total_connections ?? 0}
+                />
+              </div>
+              {database.warnings && database.warnings.length > 0 && (
+                <div className="space-y-2">
+                  {database.warnings.map((warning, i) => (
+                    <div key={i} className="text-xs p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+                      <p className="font-medium text-yellow-800 dark:text-yellow-200">{warning.message}</p>
+                      <p className="text-yellow-700 dark:text-yellow-300">{warning.recommendation}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Loading database metrics...</p>
@@ -85,32 +103,32 @@ export function InfrastructureSection({
               <div className="grid gap-4 md:grid-cols-4">
                 <MetricCard
                   title="Events Emitted"
-                  value={eventBus.events_emitted}
+                  value={eventBus.metrics?.events_emitted ?? 0}
                 />
                 <MetricCard
-                  title="Events Received"
-                  value={eventBus.events_received}
+                  title="Events Delivered"
+                  value={eventBus.metrics?.events_delivered ?? 0}
                 />
                 <MetricCard
                   title="Latency (P95)"
-                  value={eventBus?.event_latency_ms?.p95 ?? '-'}
+                  value={eventBus.metrics?.handler_latency_p95 ?? '-'}
                   unit="ms"
-                  status={eventBus?.event_latency_ms?.p95 && eventBus.event_latency_ms.p95 > 1 ? 'warning' : 'success'}
+                  status={eventBus.metrics?.handler_latency_p95 && eventBus.metrics.handler_latency_p95 > 1 ? 'warning' : 'success'}
                 />
                 <MetricCard
-                  title="Failed Deliveries"
-                  value={eventBus.failed_deliveries}
-                  status={eventBus.failed_deliveries > 0 ? 'error' : 'success'}
+                  title="Handler Errors"
+                  value={eventBus.metrics?.handler_errors ?? 0}
+                  status={(eventBus.metrics?.handler_errors ?? 0) > 0 ? 'error' : 'success'}
                 />
               </div>
               
-              {eventHistory && eventHistory.length > 0 && (
+              {eventHistory && eventHistory.events && eventHistory.events.length > 0 && (
                 <div>
                   <h4 className="text-sm font-medium mb-2">Recent Events</h4>
                   <div className="space-y-1 max-h-40 overflow-y-auto">
-                    {eventHistory.slice(0, 10).map((event, i) => (
+                    {eventHistory.events.slice(0, 10).map((event, i) => (
                       <div key={i} className="text-xs flex items-center justify-between py-1 border-b">
-                        <span className="font-mono">{event.type}</span>
+                        <span className="font-mono">{event.name}</span>
                         <span className="text-muted-foreground">
                           {new Date(event.timestamp).toLocaleTimeString()}
                         </span>
@@ -139,18 +157,16 @@ export function InfrastructureSection({
             <div className="grid gap-4 md:grid-cols-3">
               <MetricCard
                 title="Hit Rate"
-                value={cache.hit_rate != null ? `${cache.hit_rate.toFixed(1)}%` : '-'}
-                status={cache.hit_rate != null && cache.hit_rate < 50 ? 'warning' : 'success'}
+                value={cache.cache_stats?.hit_rate_percent != null ? `${cache.cache_stats.hit_rate_percent.toFixed(1)}%` : '-'}
+                status={cache.cache_stats?.hit_rate_percent != null && cache.cache_stats.hit_rate_percent < 50 ? 'warning' : 'success'}
               />
               <MetricCard
-                title="Cache Size"
-                value={cache.size_mb != null ? cache.size_mb.toFixed(2) : '-'}
-                unit="MB"
+                title="Total Requests"
+                value={cache.cache_stats?.total_requests ?? 0}
               />
               <MetricCard
-                title="Eviction Rate"
-                value={cache.eviction_rate != null ? cache.eviction_rate.toFixed(2) : '-'}
-                status={cache.eviction_rate != null && cache.eviction_rate > 10 ? 'warning' : 'success'}
+                title="Invalidations"
+                value={cache.cache_stats?.invalidations ?? 0}
               />
             </div>
           ) : (
@@ -170,31 +186,36 @@ export function InfrastructureSection({
         <CardContent>
           {workers ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Active Workers</p>
-                  <p className="text-2xl font-bold">{workers?.active_workers ?? 0}</p>
+              {workers.status === 'error' ? (
+                <div className="text-sm text-muted-foreground">
+                  <p>{workers.message || 'Could not connect to workers'}</p>
                 </div>
-                <StatusBadge status={workers?.worker_health ?? 'unknown'} />
-              </div>
-              
-              <div className="grid gap-4 md:grid-cols-3">
-                <MetricCard
-                  title="Queue Length"
-                  value={workers?.queue_length ?? 0}
-                  status={(workers?.queue_length ?? 0) > 100 ? 'warning' : 'success'}
-                />
-                <MetricCard
-                  title="Processing Rate"
-                  value={workers?.processing_rate?.toFixed(2) ?? '0.00'}
-                  unit="tasks/s"
-                />
-                <MetricCard
-                  title="Failed Tasks"
-                  value={workers?.failed_tasks ?? 0}
-                  status={(workers?.failed_tasks ?? 0) > 0 ? 'error' : 'success'}
-                />
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium">Active Workers</p>
+                      <p className="text-2xl font-bold">{workers.workers?.worker_count ?? 0}</p>
+                    </div>
+                    <StatusBadge status={workers.workers?.worker_count && workers.workers.worker_count > 0 ? 'healthy' : 'degraded'} />
+                  </div>
+                  
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <MetricCard
+                      title="Active Tasks"
+                      value={workers.workers?.total_active_tasks ?? 0}
+                    />
+                    <MetricCard
+                      title="Scheduled Tasks"
+                      value={workers.workers?.total_scheduled_tasks ?? 0}
+                    />
+                    <MetricCard
+                      title="Status"
+                      value={workers.status === 'ok' ? 'Connected' : 'Disconnected'}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Loading worker status...</p>
@@ -211,35 +232,36 @@ export function InfrastructureSection({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {modelHealth?.models ? (
-            <div className="grid gap-4 md:grid-cols-3">
-              {Object.entries(modelHealth.models || {}).map(([name, model]) => (
-                <Card key={name}>
-                  <CardContent className="p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium capitalize">{name}</p>
-                        <span className={`text-xs ${model.loaded ? 'text-green-500' : 'text-red-500'}`}>
-                          {model.loaded ? '✓ Loaded' : '✗ Not Loaded'}
-                        </span>
-                      </div>
-                      <div className="text-xs space-y-1">
-                        <p className="text-muted-foreground">
-                          Inference: {model.inference_time_ms ?? '-'}ms
-                        </p>
-                        <p className="text-muted-foreground">
-                          Memory: {model.memory_mb != null ? model.memory_mb.toFixed(1) : '-'}MB
-                        </p>
-                        {model.error_rate != null && model.error_rate > 0 && (
-                          <p className="text-red-500">
-                            Error rate: {(model.error_rate * 100).toFixed(1)}%
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          {modelHealth ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">NCF Recommendation Model</p>
+                  <p className="text-xs text-muted-foreground">
+                    {modelHealth.model?.available ? 'Model loaded' : modelHealth.model?.message || 'Not available'}
+                  </p>
+                </div>
+                <span className={`text-xs ${modelHealth.model?.available ? 'text-green-500' : 'text-yellow-500'}`}>
+                  {modelHealth.model?.available ? '✓ Available' : '○ Not Trained'}
+                </span>
+              </div>
+              {modelHealth.model?.available && (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <MetricCard
+                    title="Model Size"
+                    value={modelHealth.model.size_mb?.toFixed(2) ?? '-'}
+                    unit="MB"
+                  />
+                  <MetricCard
+                    title="Users"
+                    value={modelHealth.model.num_users ?? '-'}
+                  />
+                  <MetricCard
+                    title="Items"
+                    value={modelHealth.model.num_items ?? '-'}
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">Loading model health...</p>

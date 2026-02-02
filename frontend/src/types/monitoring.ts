@@ -1,87 +1,117 @@
 // Monitoring API Response Types
 
-export type HealthStatus = 'healthy' | 'degraded' | 'down';
+export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'down';
 
-export interface ModuleHealth {
-  status: HealthStatus;
-  response_time_ms: number;
-  error_count: number;
+export interface ComponentHealth {
+  status: HealthStatus | string;
+  message: string;
+  worker_count?: number;
 }
 
 export interface HealthCheckResponse {
   status: HealthStatus;
+  message: string;
   timestamp: string;
-  modules: Record<string, ModuleHealth>;
+  components: {
+    database: ComponentHealth;
+    redis: ComponentHealth;
+    celery: ComponentHealth;
+    ncf_model: ComponentHealth;
+    api: ComponentHealth;
+  };
+  modules?: Record<string, any>;
 }
 
 export interface PerformanceMetrics {
-  api_response_time: {
-    p50: number;
-    p95: number;
-    p99: number;
+  status: string;
+  timestamp: string;
+  metrics: {
+    cache_hit_rate?: number;
+    method_execution_times?: Record<string, any>;
+    slow_query_count?: number;
+    [key: string]: any;
   };
-  request_rate: number;
-  error_rate: number;
-  uptime_seconds: number;
 }
 
 export interface DatabaseMetrics {
+  status: string;
+  timestamp: string;
+  database: {
+    type: string;
+    healthy: boolean;
+    health_message: string;
+  };
   connection_pool: {
-    active: number;
-    idle: number;
-    max: number;
-    utilization: number;
+    database_type: string;
+    pool_size: number;
+    checked_in: number;
+    checked_out: number;
+    overflow: number;
+    total_connections: number;
+    pool_usage_percent: number;
   };
-  query_performance: {
-    avg_query_time_ms: number;
-    slow_queries: number;
-  };
-  table_stats: Record<string, {
-    row_count: number;
-    size_mb: number;
+  warnings: Array<{
+    level: string;
+    message: string;
+    recommendation: string;
   }>;
 }
 
 export interface EventBusMetrics {
-  events_emitted: number;
-  events_received: number;
-  event_latency_ms: {
-    p50: number;
-    p95: number;
-    p99: number;
+  status: string;
+  timestamp: string;
+  metrics: {
+    events_emitted: number;
+    events_delivered: number;
+    handler_errors: number;
+    event_types: Record<string, number>;
+    handler_latency_p50: number;
+    handler_latency_p95: number;
+    handler_latency_p99: number;
   };
-  event_types: Record<string, number>;
-  failed_deliveries: number;
 }
 
 export interface CacheStats {
-  hit_rate: number;
-  miss_rate: number;
-  size_mb: number;
-  eviction_rate: number;
-  top_keys: Array<{
-    key: string;
+  status: string;
+  timestamp: string;
+  cache_stats: {
+    hit_rate: number;
+    hit_rate_percent: number;
     hits: number;
-    size_bytes: number;
-  }>;
+    misses: number;
+    invalidations: number;
+    total_requests: number;
+  };
 }
 
 export interface WorkerStatus {
-  active_workers: number;
-  worker_health: HealthStatus;
-  queue_length: number;
-  processing_rate: number;
-  failed_tasks: number;
+  status: string;
+  timestamp: string;
+  message?: string;
+  workers?: {
+    worker_count: number;
+    total_active_tasks: number;
+    total_scheduled_tasks: number;
+    active_tasks: Record<string, any[]>;
+    scheduled_tasks: Record<string, any[]>;
+    stats: Record<string, any>;
+  };
 }
 
 export interface ModelHealthMetrics {
-  models: Record<string, {
-    loaded: boolean;
-    inference_time_ms: number;
-    memory_mb: number;
-    error_rate: number;
-    last_inference: string;
-  }>;
+  status: string;
+  timestamp: string;
+  model?: {
+    available: boolean;
+    path?: string;
+    size_mb?: number;
+    last_modified?: string;
+    num_users?: number;
+    num_items?: number;
+    embedding_dim?: number;
+    message?: string;
+    error?: string;
+  };
 }
 
 export interface UserEngagementMetrics {
@@ -105,8 +135,16 @@ export interface RecommendationQualityMetrics {
   }>;
 }
 
+export interface EventHistoryResponse {
+  status: string;
+  timestamp: string;
+  count: number;
+  events: EventHistoryItem[];
+}
+
 export interface EventHistoryItem {
-  type: string;
+  name: string;
   timestamp: string;
   data?: Record<string, unknown>;
+  priority?: number;
 }

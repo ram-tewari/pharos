@@ -28,16 +28,16 @@ export function ModuleHealthSection({ health }: ModuleHealthSectionProps) {
     );
   }
   
-  const modules = Object.entries(health?.modules || {}).filter(([_, module]) => {
+  const components = Object.entries(health?.components || {}).filter(([_, component]) => {
     if (moduleFilter === 'all') return true;
-    return module.status === moduleFilter;
+    return component.status === moduleFilter;
   });
   
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Module Health ({modules.length})</CardTitle>
+          <CardTitle>Module Health ({components.length})</CardTitle>
           <Select value={moduleFilter} onValueChange={(v) => setModuleFilter(v as ModuleFilter)}>
             <SelectTrigger className="w-[150px]">
               <SelectValue />
@@ -53,22 +53,22 @@ export function ModuleHealthSection({ health }: ModuleHealthSectionProps) {
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {modules.map(([name, module]) => (
+          {components.map(([name, component]) => (
             <Card key={name}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
-                    <p className="font-medium capitalize">{name}</p>
+                    <p className="font-medium capitalize">{name.replace('_', ' ')}</p>
                     <p className="text-xs text-muted-foreground">
-                      {module.response_time_ms}ms response
+                      {component.message}
                     </p>
-                    {module.error_count > 0 && (
-                      <p className="text-xs text-red-500">
-                        {module.error_count} errors
+                    {component.worker_count !== undefined && (
+                      <p className="text-xs text-muted-foreground">
+                        {component.worker_count} worker(s)
                       </p>
                     )}
                   </div>
-                  <StatusBadge status={module.status} />
+                  <StatusBadge status={component.status as HealthStatus} />
                 </div>
               </CardContent>
             </Card>

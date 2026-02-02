@@ -7,11 +7,15 @@ import { CodeEditorView } from '@/features/editor/CodeEditorView';
 import type { CodeFile } from '@/features/editor/types';
 import { FileTree } from '@/components/features/repositories/FileTree';
 import { RepositoryHeader } from '@/components/features/repositories/RepositoryHeader';
-import { Loader2 } from 'lucide-react';
+import { RepositoryIngestDialog } from '@/components/features/repositories/RepositoryIngestDialog';
+import { Button } from '@/components/ui/button';
+import { Loader2, Plus } from 'lucide-react';
 
 const RepositoriesPage = () => {
+  const [showIngestDialog, setShowIngestDialog] = useState(false);
+  
   // Use TanStack Query hook for data fetching
-  const { data: resources, isLoading, error } = useResources();
+  const { data: resources, isLoading, error, refetch } = useResources();
   
   // Use repository store for UI state
   const { activeRepositoryId, setActiveRepository } = useRepositoryStore();
@@ -83,20 +87,32 @@ const RepositoriesPage = () => {
   // No repositories state
   if (!activeRepository) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Repositories</h1>
-          <p className="text-muted-foreground">
-            Manage and explore your code repositories
-          </p>
+      <>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Repositories</h1>
+            <p className="text-muted-foreground">
+              Manage and explore your code repositories
+            </p>
+          </div>
+          
+          <div className="rounded-lg border bg-card p-8 text-center space-y-4">
+            <p className="text-muted-foreground">
+              No repositories found. Add a repository to get started.
+            </p>
+            <Button onClick={() => setShowIngestDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Ingest Repository
+            </Button>
+          </div>
         </div>
-        
-        <div className="rounded-lg border bg-card p-8 text-center">
-          <p className="text-muted-foreground">
-            No repositories found. Add a repository to get started.
-          </p>
-        </div>
-      </div>
+
+        <RepositoryIngestDialog
+          open={showIngestDialog}
+          onOpenChange={setShowIngestDialog}
+          onSuccess={() => refetch()}
+        />
+      </>
     );
   }
 

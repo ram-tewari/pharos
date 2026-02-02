@@ -5,8 +5,11 @@
  * Shows repository name, description, stats, and status.
  */
 
-import { GitBranch, Star, FileCode, Activity } from 'lucide-react';
+import { useState } from 'react';
+import { GitBranch, Star, FileCode, Activity, Plus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { RepositoryIngestDialog } from './RepositoryIngestDialog';
 import type { Repository } from '@/stores/repository';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +26,8 @@ interface RepositoryHeaderProps {
 // ============================================================================
 
 export function RepositoryHeader({ repository }: RepositoryHeaderProps) {
+  const [showIngestDialog, setShowIngestDialog] = useState(false);
+  
   const statusColors = {
     ready: 'bg-green-500',
     indexing: 'bg-yellow-500',
@@ -102,11 +107,28 @@ export function RepositoryHeader({ repository }: RepositoryHeaderProps) {
           </div>
         </div>
 
-        {/* Actions (placeholder for future) */}
+        {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* TODO: Add actions like refresh, settings, etc. */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowIngestDialog(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Ingest Repository
+          </Button>
         </div>
       </div>
+
+      {/* Ingest Dialog */}
+      <RepositoryIngestDialog
+        open={showIngestDialog}
+        onOpenChange={setShowIngestDialog}
+        onSuccess={() => {
+          // Optionally refresh repository list
+          window.location.reload();
+        }}
+      />
     </div>
   );
 }

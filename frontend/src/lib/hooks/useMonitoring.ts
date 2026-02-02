@@ -13,8 +13,19 @@ const REFETCH_INTERVAL = 30000; // 30 seconds
 export function useHealthCheck() {
   return useQuery({
     queryKey: ['monitoring', 'health'],
-    queryFn: monitoringApi.getHealth,
+    queryFn: async () => {
+      try {
+        const response = await monitoringApi.getHealth();
+        console.log('[Monitoring] Health check response:', response);
+        return response;
+      } catch (error) {
+        console.error('[Monitoring] Health check failed:', error);
+        throw error;
+      }
+    },
     refetchInterval: REFETCH_INTERVAL,
+    retry: 3,
+    retryDelay: 1000,
   });
 }
 
@@ -43,17 +54,23 @@ export function usePerformanceMetrics() {
 }
 
 export function useRecommendationQuality(timeRange?: string) {
+  // Convert timeRange to days (default 7)
+  const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 7;
+  
   return useQuery({
-    queryKey: ['monitoring', 'recommendation-quality', timeRange],
-    queryFn: () => monitoringApi.getRecommendationQuality({ time_range: timeRange }),
+    queryKey: ['monitoring', 'recommendation-quality', days],
+    queryFn: () => monitoringApi.getRecommendationQuality({ time_window_days: days }),
     refetchInterval: REFETCH_INTERVAL,
   });
 }
 
 export function useUserEngagement(timeRange?: string) {
+  // Convert timeRange to days (default 7)
+  const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 7;
+  
   return useQuery({
-    queryKey: ['monitoring', 'user-engagement', timeRange],
-    queryFn: () => monitoringApi.getUserEngagement({ time_range: timeRange }),
+    queryKey: ['monitoring', 'user-engagement', days],
+    queryFn: () => monitoringApi.getUserEngagement({ time_window_days: days }),
     refetchInterval: REFETCH_INTERVAL,
   });
 }

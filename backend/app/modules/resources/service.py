@@ -1638,7 +1638,7 @@ class ChunkingService:
         return chunks
 
     def store_chunks(
-        self, resource_id: str, chunks: List[Dict[str, Any]]
+        self, resource_id: str, chunks: List[Dict[str, Any]], commit: bool = True
     ) -> List[db_models.DocumentChunk]:
         """
         Store chunks to database and generate embeddings.
@@ -1649,6 +1649,8 @@ class ChunkingService:
         Args:
             resource_id: Resource ID for the chunks
             chunks: List of chunk dictionaries from semantic_chunk() or fixed_chunk()
+            commit: Whether to commit the transaction (default: True). Set to False
+                   when calling from within a larger transaction.
 
         Returns:
             List of created DocumentChunk model instances
@@ -1694,43 +1696,58 @@ class ChunkingService:
 
             stored_chunks = []
 
-            # Process each chunk
+            # PHASE 1: Generate all embeddings first (fail fast if embedding service fails)
+            chunk_data_with_embeddings = []
             for chunk_dict in chunks:
                 content = chunk_dict["content"]
                 chunk_index = chunk_dict["chunk_index"]
-                chunk_metadata = chunk_dict.get("chunk_metadata", {})
+                chunk_metadata = chunk_dict.get("chunk_metadata", {}).copy()
 
                 # Generate embedding for chunk (optimized but still required for RAG)
-                try:
-                    if self.embedding_service is not None:
+                if self.embedding_service is not None:
+                    try:
                         embedding = embedding_gen.generate_embedding(content)
                         if embedding:
                             chunk_metadata["embedding_generated"] = True
                             # Store embedding vector in metadata for now
                             # TODO: Add dedicated embedding column to DocumentChunk model
                             chunk_metadata["embedding_vector"] = embedding.tolist() if hasattr(embedding, 'tolist') else list(embedding)
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to generate embedding for chunk {chunk_index}: {e} - continuing anyway"
-                    )
+                        else:
+                            chunk_metadata["embedding_generated"] = False
+                    except Exception as e:
+                        # Re-raise embedding errors to ensure transaction integrity
+                        logger.error(f"Embedding generation failed for chunk {chunk_index}: {e}")
+                        raise
+                else:
                     chunk_metadata["embedding_generated"] = False
 
-                # Create DocumentChunk record
+                chunk_data_with_embeddings.append({
+                    "content": content,
+                    "chunk_index": chunk_index,
+                    "chunk_metadata": chunk_metadata
+                })
+
+            # PHASE 2: Create all chunk records (only after all embeddings succeed)
+            for chunk_data in chunk_data_with_embeddings:
                 chunk_record = db_models.DocumentChunk(
                     resource_id=resource_uuid,
-                    content=content,
-                    chunk_index=chunk_index,
+                    content=chunk_data["content"],
+                    chunk_index=chunk_data["chunk_index"],
                     embedding_id=None,  # Not using separate embedding table yet
-                    chunk_metadata=chunk_metadata,
+                    chunk_metadata=chunk_data["chunk_metadata"],
                     created_at=datetime.now(timezone.utc),
                 )
                 stored_chunks.append(chunk_record)
 
-            # OPTIMIZATION: Bulk insert all chunks at once instead of individual adds
+            # PHASE 3: Bulk insert all chunks at once
             if stored_chunks:
                 self.db.bulk_save_objects(stored_chunks)
-                # Commit transaction
-                self.db.commit()
+                # Commit transaction (if requested)
+                if commit:
+                    self.db.commit()
+                else:
+                    # Flush to make objects available in current transaction
+                    self.db.flush()
             
             # Verify chunks were actually stored
             chunk_count = (
@@ -1752,11 +1769,12 @@ class ChunkingService:
             return stored_chunks
 
         except Exception as e:
-            # Rollback on any error
+            # Rollback on any error (only if we were managing the transaction)
             logger.error(
                 f"Failed to store chunks for resource {resource_id}: {e}", exc_info=True
             )
-            self.db.rollback()
+            if commit:
+                self.db.rollback()
             raise
 
     def chunk_resource(

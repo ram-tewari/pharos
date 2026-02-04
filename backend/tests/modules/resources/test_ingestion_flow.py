@@ -35,7 +35,7 @@ def test_create_resource_success(
     test_case = golden_data["create_resource_success"]
 
     # Make API request
-    response = client.post("/resources", json=test_case["request"])
+    response = client.post("/api/resources", json=test_case["request"])
 
     # Verify HTTP response status
     expected_status = test_case["expected_response"]["status_code"]
@@ -132,7 +132,7 @@ def test_create_resource_missing_url(client: TestClient, mock_event_bus: MagicMo
     test_case = golden_data["create_resource_missing_url"]
 
     # Make API request
-    response = client.post("/resources", json=test_case["request"])
+    response = client.post("/api/resources", json=test_case["request"])
 
     # Verify HTTP response status
     expected_status = test_case["expected_response"]["status_code"]
@@ -186,7 +186,7 @@ def test_create_resource_duplicate_url(
     mock_event_bus.reset_mock()
 
     # Make API request with duplicate URL
-    response = client.post("/resources", json=test_case["request"])
+    response = client.post("/api/resources", json=test_case["request"])
 
     # Verify HTTP response status
     expected_status = test_case["expected_response"]["status_code"]

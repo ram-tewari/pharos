@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { EmptyPanelState } from './EmptyPanelState';
 import type { GraphNode } from '@/types/graph';
 
 // ============================================================================
@@ -55,12 +56,17 @@ export const NodeDetailsPanel = memo<NodeDetailsPanelProps>(({ node, onClose }) 
 
   if (!node) {
     return (
-      <div className="flex items-center justify-center h-full p-8 text-center">
-        <div className="text-muted-foreground">
-          <Network className="w-12 h-12 mx-auto mb-4 opacity-50" />
-          <p>Select a node to view details</p>
-        </div>
-      </div>
+      <aside 
+        className="flex items-center justify-center h-full bg-card"
+        role="complementary"
+        aria-label="Node details panel"
+      >
+        <EmptyPanelState
+          title="No node selected"
+          message="Click on a node in the graph to view its details."
+          icon="info"
+        />
+      </aside>
     );
   }
 
@@ -82,14 +88,22 @@ export const NodeDetailsPanel = memo<NodeDetailsPanelProps>(({ node, onClose }) 
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <aside 
+      className="flex flex-col h-full bg-card shadow-lg"
+      role="complementary"
+      aria-label="Node details panel"
+    >
       {/* Header */}
-      <div className="flex items-start justify-between p-4 border-b">
+      <div className="flex items-start justify-between p-3 md:p-4 border-b bg-gradient-to-r from-card to-card/50">
         <div className="flex-1 pr-4">
-          <h3 className="font-semibold text-lg line-clamp-2" title={node.label}>
+          <h3 
+            className="font-semibold text-base md:text-lg line-clamp-2" 
+            title={node.label}
+            id="node-details-title"
+          >
             {node.label}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">
             {node.type === 'resource' ? 'Resource' : 'Entity'}
           </p>
         </div>
@@ -97,32 +111,40 @@ export const NodeDetailsPanel = memo<NodeDetailsPanelProps>(({ node, onClose }) 
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="shrink-0"
+          className="shrink-0 min-h-[44px] min-w-[44px] transition-all duration-200 hover:scale-110 hover:bg-accent active:scale-95"
+          aria-label="Close node details panel"
         >
-          <X className="w-4 h-4" />
+          <X className="w-4 h-4" aria-hidden="true" />
         </Button>
       </div>
 
       {/* Content */}
-      <ScrollArea className="flex-1">
-        <div className="p-4 space-y-6">
+      <ScrollArea className="flex-1" aria-labelledby="node-details-title">
+        <div className="p-3 md:p-4 space-y-4 md:space-y-6">
           {/* Quality Score */}
           {qualityScore !== undefined && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Quality Score</h4>
+            <div role="group" aria-labelledby="quality-heading">
+              <h4 id="quality-heading" className="text-sm font-medium mb-2">Quality Score</h4>
               <div className="flex items-center gap-3">
                 <div className="flex-1">
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-2 bg-muted rounded-full overflow-hidden"
+                    role="progressbar"
+                    aria-valuenow={qualityScore * 100}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label={`Quality score: ${(qualityScore * 100).toFixed(0)} percent`}
+                  >
                     <div
                       className={`h-full ${getQualityColor(qualityScore)}`}
                       style={{ width: `${qualityScore * 100}%` }}
                     />
                   </div>
                 </div>
-                <Badge variant="outline">
+                <Badge variant="outline" aria-label={`Quality level: ${getQualityLabel(qualityScore)}`}>
                   {getQualityLabel(qualityScore)}
                 </Badge>
-                <span className="text-sm font-medium">
+                <span className="text-sm font-medium" aria-hidden="true">
                   {(qualityScore * 100).toFixed(0)}%
                 </span>
               </div>
@@ -130,8 +152,8 @@ export const NodeDetailsPanel = memo<NodeDetailsPanelProps>(({ node, onClose }) 
           )}
 
           {/* Metadata */}
-          <div>
-            <h4 className="text-sm font-medium mb-2">Metadata</h4>
+          <div role="group" aria-labelledby="metadata-heading">
+            <h4 id="metadata-heading" className="text-sm font-medium mb-2">Metadata</h4>
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <dt className="text-muted-foreground">Type</dt>
@@ -154,11 +176,11 @@ export const NodeDetailsPanel = memo<NodeDetailsPanelProps>(({ node, onClose }) 
 
           {/* Tags */}
           {tags && tags.length > 0 && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Tags</h4>
-              <div className="flex flex-wrap gap-2">
+            <div role="group" aria-labelledby="tags-heading">
+              <h4 id="tags-heading" className="text-sm font-medium mb-2">Tags</h4>
+              <div className="flex flex-wrap gap-2" role="list">
                 {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
+                  <Badge key={tag} variant="secondary" role="listitem">
                     {tag}
                   </Badge>
                 ))}
@@ -168,8 +190,8 @@ export const NodeDetailsPanel = memo<NodeDetailsPanelProps>(({ node, onClose }) 
 
           {/* Centrality Metrics */}
           {node.metadata?.centrality && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">Centrality Metrics</h4>
+            <div role="group" aria-labelledby="centrality-heading">
+              <h4 id="centrality-heading" className="text-sm font-medium mb-2">Centrality Metrics</h4>
               <dl className="space-y-2 text-sm">
                 {node.metadata.centrality.degree !== undefined && (
                   <div className="flex justify-between">
@@ -202,29 +224,31 @@ export const NodeDetailsPanel = memo<NodeDetailsPanelProps>(({ node, onClose }) 
           <Separator />
 
           {/* Actions */}
-          <div className="space-y-2">
+          <div className="space-y-2" role="group" aria-label="Node actions">
             {resourceId && (
               <Button
                 variant="default"
-                className="w-full"
+                className="w-full min-h-[44px] transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-95"
                 onClick={handleViewDetails}
+                aria-label={`View full details for ${node.label}`}
               >
-                <ExternalLink className="w-4 h-4 mr-2" />
+                <ExternalLink className="w-4 h-4 mr-2" aria-hidden="true" />
                 View Details
               </Button>
             )}
             <Button
               variant="outline"
-              className="w-full"
+              className="w-full min-h-[44px] transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-95"
               onClick={handleViewInMindMap}
+              aria-label={`View ${node.label} in mind map mode`}
             >
-              <Network className="w-4 h-4 mr-2" />
+              <Network className="w-4 h-4 mr-2" aria-hidden="true" />
               View in Mind Map
             </Button>
           </div>
         </div>
       </ScrollArea>
-    </div>
+    </aside>
   );
 });
 

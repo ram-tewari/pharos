@@ -169,6 +169,69 @@ function transformToGraphData(
 }
 
 // ============================================================================
+// Error Handling & Retry Logic
+// ============================================================================
+
+/**
+ * Retry configuration
+ */
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  initialDelay: 1000, // 1 second
+  maxDelay: 10000, // 10 seconds
+  backoffMultiplier: 2,
+};
+
+/**
+ * Sleep utility for retry delays
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Retry wrapper with exponential backoff
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries = RETRY_CONFIG.maxRetries
+): Promise<T> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      
+      // Don't retry on client errors (4xx)
+      if (error && typeof error === 'object' && 'response' in error) {
+        const response = (error as any).response;
+        if (response?.status >= 400 && response?.status < 500) {
+          throw error;
+        }
+      }
+      
+      // Don't retry on last attempt
+      if (attempt === retries) {
+        break;
+      }
+      
+      // Calculate delay with exponential backoff
+      const delay = Math.min(
+        RETRY_CONFIG.initialDelay * Math.pow(RETRY_CONFIG.backoffMultiplier, attempt),
+        RETRY_CONFIG.maxDelay
+      );
+      
+      console.log(`Retry attempt ${attempt + 1}/${retries} after ${delay}ms`);
+      await sleep(delay);
+    }
+  }
+  
+  throw lastError || new Error('Request failed after retries');
+}
+
+// ============================================================================
 // Graph API Client Class
 // ============================================================================
 
@@ -186,16 +249,18 @@ export class GraphAPIClient {
    * ```
    */
   async getNeighbors(resourceId: string): Promise<GraphData> {
-    try {
-      const response = await apiClient.get<NeighborsResponse>(
-        `/graph/resource/${resourceId}/neighbors`
-      );
-      
-      return transformToGraphData(response.data.nodes, response.data.edges);
-    } catch (error) {
-      console.error('Failed to fetch neighbors:', error);
-      throw new Error('Failed to load graph neighbors. Please try again.');
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get<NeighborsResponse>(
+          `/graph/resource/${resourceId}/neighbors`
+        );
+        
+        return transformToGraphData(response.data.nodes, response.data.edges);
+      } catch (error) {
+        console.error('Failed to fetch neighbors:', error);
+        throw new Error('Failed to load graph neighbors. Please check your connection and try again.');
+      }
+    });
   }
 
   /**
@@ -211,21 +276,23 @@ export class GraphAPIClient {
    * ```
    */
   async getOverview(threshold: number = 0.5): Promise<GraphData> {
-    try {
-      const response = await apiClient.get<OverviewResponse>(
-        `/graph/overview`,
-        { params: { threshold } }
-      );
-      
-      return transformToGraphData(
-        response.data.nodes,
-        response.data.edges,
-        response.data.metadata
-      );
-    } catch (error) {
-      console.error('Failed to fetch overview:', error);
-      throw new Error('Failed to load graph overview. Please try again.');
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get<OverviewResponse>(
+          `/graph/overview`,
+          { params: { threshold } }
+        );
+        
+        return transformToGraphData(
+          response.data.nodes,
+          response.data.edges,
+          response.data.metadata
+        );
+      } catch (error) {
+        console.error('Failed to fetch overview:', error);
+        throw new Error('Failed to load graph overview. Please check your connection and try again.');
+      }
+    });
   }
 
   /**
@@ -245,28 +312,30 @@ export class GraphAPIClient {
     entityA: string,
     entityC: string
   ): Promise<Hypothesis[]> {
-    try {
-      const response = await apiClient.post<HypothesisResponse>(
-        `/graph/discover`,
-        {
-          entity_a: entityA,
-          entity_c: entityC,
-        }
-      );
-      
-      return response.data.hypotheses.map((h) => ({
-        id: h.id,
-        type: h.type as Hypothesis['type'],
-        confidence: h.confidence,
-        evidence: h.evidence,
-        nodes: h.nodes,
-        edges: h.edges,
-        metadata: h.metadata,
-      }));
-    } catch (error) {
-      console.error('Failed to discover hypotheses:', error);
-      throw new Error('Failed to discover hypotheses. Please try again.');
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.post<HypothesisResponse>(
+          `/graph/discover`,
+          {
+            entity_a: entityA,
+            entity_c: entityC,
+          }
+        );
+        
+        return response.data.hypotheses.map((h) => ({
+          id: h.id,
+          type: h.type as Hypothesis['type'],
+          confidence: h.confidence,
+          evidence: h.evidence,
+          nodes: h.nodes,
+          edges: h.edges,
+          metadata: h.metadata,
+        }));
+      } catch (error) {
+        console.error('Failed to discover hypotheses:', error);
+        throw new Error('Failed to discover hypotheses. Please check your connection and try again.');
+      }
+    });
   }
 
   /**
@@ -281,14 +350,16 @@ export class GraphAPIClient {
    * ```
    */
   async getEntities(): Promise<GraphEntity[]> {
-    try {
-      const response = await apiClient.get<EntitiesResponse>(`/graph/entities`);
-      
-      return response.data.entities;
-    } catch (error) {
-      console.error('Failed to fetch entities:', error);
-      throw new Error('Failed to load entities. Please try again.');
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get<EntitiesResponse>(`/graph/entities`);
+        
+        return response.data.entities;
+      } catch (error) {
+        console.error('Failed to fetch entities:', error);
+        throw new Error('Failed to load entities. Please check your connection and try again.');
+      }
+    });
   }
 
   /**
@@ -304,16 +375,18 @@ export class GraphAPIClient {
    * ```
    */
   async getEntityRelationships(entityId: string): Promise<GraphRelationship[]> {
-    try {
-      const response = await apiClient.get<RelationshipsResponse>(
-        `/graph/entities/${entityId}/relationships`
-      );
-      
-      return response.data.relationships;
-    } catch (error) {
-      console.error('Failed to fetch entity relationships:', error);
-      throw new Error('Failed to load entity relationships. Please try again.');
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get<RelationshipsResponse>(
+          `/graph/entities/${entityId}/relationships`
+        );
+        
+        return response.data.relationships;
+      } catch (error) {
+        console.error('Failed to fetch entity relationships:', error);
+        throw new Error('Failed to load entity relationships. Please check your connection and try again.');
+      }
+    });
   }
 
   /**
@@ -333,30 +406,32 @@ export class GraphAPIClient {
     startEntity: string,
     depth: number = 2
   ): Promise<GraphData & { path?: string[] }> {
-    try {
-      const response = await apiClient.get<TraverseResponse>(
-        `/graph/traverse`,
-        {
-          params: {
-            start: startEntity,
-            depth,
-          },
-        }
-      );
-      
-      const graphData = transformToGraphData(
-        response.data.nodes,
-        response.data.edges
-      );
-      
-      return {
-        ...graphData,
-        path: response.data.path,
-      };
-    } catch (error) {
-      console.error('Failed to traverse graph:', error);
-      throw new Error('Failed to traverse graph. Please try again.');
-    }
+    return withRetry(async () => {
+      try {
+        const response = await apiClient.get<TraverseResponse>(
+          `/graph/traverse`,
+          {
+            params: {
+              start: startEntity,
+              depth,
+            },
+          }
+        );
+        
+        const graphData = transformToGraphData(
+          response.data.nodes,
+          response.data.edges
+        );
+        
+        return {
+          ...graphData,
+          path: response.data.path,
+        };
+      } catch (error) {
+        console.error('Failed to traverse graph:', error);
+        throw new Error('Failed to traverse graph. Please check your connection and try again.');
+      }
+    });
   }
 }
 

@@ -168,7 +168,7 @@ class TestDocumentIntelligenceWorkflow:
         print(f"✓ Step 1: Created PDF resource {pdf_resource_id}")
 
         # Step 2: Verify metadata extraction
-        response = client.get(f"/resources/{str(pdf_resource_id)}")
+        response = client.get(f"/api/resources/{str(pdf_resource_id)}")
         assert response.status_code == 200
         resource_data = response.json()
         assert resource_data["title"] == "Machine Learning Paper"
@@ -210,7 +210,7 @@ class TestDocumentIntelligenceWorkflow:
         print(f"✓ Step 3: Created code resource {code_resource_id} for linking")
 
         # Step 4: Auto-link PDF to code
-        response = client.post(f"/resources/{str(pdf_resource_id)}/auto-link")
+        response = client.post(f"/api/resources/{str(pdf_resource_id)}/auto-link")
         assert response.status_code in [200, 201]
         link_result = response.json()
         print(f"✓ Step 4: Auto-linked resources, created {link_result.get('links_created', 0)} links")

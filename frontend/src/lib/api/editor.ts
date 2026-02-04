@@ -186,6 +186,21 @@ export const editorApi = {
   },
 
   /**
+   * Get a specific annotation by ID
+   * @param annotationId - Annotation ID
+   * @returns Annotation details
+   * @endpoint GET /annotations/{annotation_id}
+   */
+  getAnnotation: async (annotationId: string): Promise<Annotation> => {
+    const response = await apiClient.get(`/annotations/${annotationId}`);
+    return validateResponseStrict(
+      response.data,
+      AnnotationSchema,
+      `GET /annotations/${annotationId}`
+    );
+  },
+
+  /**
    * Update an annotation
    * @param annotationId - Annotation ID
    * @param data - Updated annotation data (note, tags, color, is_shared)
@@ -325,6 +340,21 @@ export const editorApi = {
   // ==========================================================================
   // Quality Endpoints
   // ==========================================================================
+
+  /**
+   * Get quality details for a resource
+   * @param resourceId - Resource ID
+   * @returns Quality details with dimensions and scores
+   * @endpoint GET /quality/{resource_id}
+   */
+  getQualityDetails: async (resourceId: string): Promise<QualityDetails> => {
+    const response = await apiClient.get(`/quality/${resourceId}`);
+    return validateResponseStrict(
+      response.data,
+      QualityDetailsSchema,
+      `GET /quality/${resourceId}`
+    );
+  },
 
   /**
    * Recalculate quality scores for one or more resources
@@ -474,6 +504,30 @@ export const editorApi = {
   getHoverInfo: async (params: HoverParams): Promise<HoverInfo> => {
     const response = await apiClient.get('/api/graph/code/hover', { params });
     return validateResponseStrict(response.data, HoverInfoSchema, 'GET /api/graph/code/hover');
+  },
+
+  /**
+   * Get Node2Vec summary for a symbol
+   * @param symbol - Symbol name
+   * @returns Node2Vec summary with embeddings and similar symbols
+   * @endpoint GET /api/graph/node2vec/{symbol}
+   */
+  getNode2VecSummary: async (symbol: string): Promise<any> => {
+    const encodedSymbol = encodeURIComponent(symbol);
+    const response = await apiClient.get(`/api/graph/node2vec/${encodedSymbol}`);
+    return response.data;
+  },
+
+  /**
+   * Get graph connections for a symbol
+   * @param symbol - Symbol name
+   * @returns Graph connections (nodes and edges)
+   * @endpoint GET /api/graph/connections/{symbol}
+   */
+  getConnections: async (symbol: string): Promise<any> => {
+    const encodedSymbol = encodeURIComponent(symbol);
+    const response = await apiClient.get(`/api/graph/connections/${encodedSymbol}`);
+    return response.data;
   },
 };
 

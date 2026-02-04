@@ -247,7 +247,7 @@ async def upload_resource_file(
     logger.info(f"Content type: {file.content_type}")
     
     try:
-        # Validate file type and content
+        # Validate file type
         allowed_types = ["application/pdf", "text/html", "text/plain"]
         allowed_extensions = [".pdf", ".html", ".htm", ".txt"]
         
@@ -259,27 +259,31 @@ async def upload_resource_file(
                 detail=f"Invalid file type. Allowed: PDF, HTML, TXT. Got: {file.content_type}"
             )
         
-        # Validate file content is not corrupted
-        try:
-            # Try to detect encoding for text files
-            if file_ext in ['.txt', '.html', '.htm']:
-                detected = chardet.detect(file_content[:1024])  # Check first 1KB
-                if detected['confidence'] < 0.7:
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="File encoding could not be reliably detected"
-                    )
-        except Exception as e:
-            logger.warning(f"File validation warning: {e}")
+        # Read file content first
+        file_content = await file.read()
         
         # Validate file size (50MB max)
         max_size = 50 * 1024 * 1024  # 50MB
-        file_content = await file.read()
         if len(file_content) > max_size:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"File too large. Maximum size: 50MB. Got: {len(file_content) / 1024 / 1024:.2f}MB"
             )
+        
+        # Validate text files only (PDFs are binary and expected to have non-UTF-8 bytes)
+        if file_ext in ['.txt', '.html', '.htm']:
+            try:
+                detected = chardet.detect(file_content[:1024])
+                if detected['confidence'] < 0.5:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="File encoding could not be reliably detected. Please ensure file is valid text."
+                    )
+            except Exception:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid text file format."
+                )
         
         # Save file to temporary location
         storage_dir = Path("storage/uploads")
@@ -559,7 +563,7 @@ class ChunkListResponse(BaseModel):
     total: int = Field(..., description="Total number of chunks")
 
 
-@router.post("/resources/{resource_id}/chunks", status_code=status.HTTP_201_CREATED)
+@router.post("/{resource_id}/chunks", status_code=status.HTTP_201_CREATED)
 async def create_resource_chunks(
     resource_id: uuid.UUID,
     payload: ChunkResourceRequest,
@@ -840,7 +844,7 @@ async def get_chunk(
 # ============================================================================
 
 
-@router.post("/resources/ingest-repo", response_model=IngestionTaskResponse)
+@router.post("/ingest-repo", response_model=IngestionTaskResponse)
 async def ingest_repository(
     request: RepoIngestionRequest,
     req: Request,
@@ -937,7 +941,7 @@ async def ingest_repository(
 
 
 @router.get(
-    "/resources/ingest-repo/{task_id}/status", response_model=IngestionStatusResponse
+    "/ingest-repo/{task_id}/status", response_model=IngestionStatusResponse
 )
 async def get_ingestion_status(
     task_id: str,

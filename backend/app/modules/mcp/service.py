@@ -14,8 +14,8 @@ from typing import Any, Callable, Dict, List, Optional
 from jsonschema import ValidationError, validate
 from sqlalchemy.orm import Session
 
-from backend.app.modules.mcp.model import MCPSession
-from backend.app.modules.mcp.schema import (
+from .model import MCPSession
+from .schema import (
     SessionResponse,
     ToolDefinition,
     ToolInvocationResult,

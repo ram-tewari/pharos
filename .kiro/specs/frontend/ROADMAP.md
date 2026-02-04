@@ -759,14 +759,14 @@ This roadmap leverages Neo Alexandria's unique backend capabilities:
 
 ### Implementation Options
 
-#### Option A: "Clean & Fast" ⭐⭐⭐ Medium Complexity ⭐ RECOMMENDED
+#### Option A: "Clean & Fast" ⭐⭐⭐ Medium Complexity 
 - **Style**: Tree view + prediction cards
 - **Components**: shadcn-ui Tree, Card, Badge, Progress
 - **Interaction**: Click to classify, review predictions
 - **Pros**: Clear, functional, easy to understand
 - **Cons**: Basic visuals, limited interactivity
 
-#### Option B: "Rich & Visual" ⭐⭐⭐⭐⭐ Very High Complexity
+#### Option B: "Rich & Visual" ⭐⭐⭐⭐⭐ Very High Complexity ⭐ RECOMMENDED
 - **Style**: Animated tree, confidence visualizations
 - **Components**: Custom D3 tree + magic-ui effects
 - **Interaction**: Smooth animations, interactive confidence

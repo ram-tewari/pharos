@@ -98,59 +98,79 @@ export const FilterPanel = memo<FilterPanelProps>(({
     (localFilters.dateRange ? 1 : 0);
 
   return (
-    <div className="flex flex-col h-full bg-card border-l">
+    <aside 
+      className="flex flex-col h-full bg-card border-l shadow-lg"
+      role="complementary"
+      aria-label="Graph filters"
+    >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-3 md:p-4 border-b bg-gradient-to-r from-card to-card/50">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4" />
-          <h3 className="font-semibold">Filters</h3>
+          <Filter className="w-4 h-4" aria-hidden="true" />
+          <h3 className="font-semibold text-sm md:text-base">Filters</h3>
           {activeFilterCount > 0 && (
-            <span className="text-xs text-muted-foreground">
+            <span 
+              className="text-xs text-muted-foreground animate-in fade-in duration-200"
+              aria-live="polite"
+            >
               ({activeFilterCount} active)
             </span>
           )}
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="w-4 h-4" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={onClose}
+          aria-label="Close filter panel"
+          className="min-h-[44px] min-w-[44px] transition-all duration-200 hover:scale-110 hover:bg-accent active:scale-95"
+        >
+          <X className="w-4 h-4" aria-hidden="true" />
         </Button>
       </div>
 
       {/* Content */}
       <ScrollArea className="flex-1">
-        <div className="p-4 space-y-6">
+        <div className="p-3 md:p-4 space-y-4 md:space-y-6">
           {/* Resource Types */}
-          <div>
-            <h4 className="text-sm font-medium mb-3">Resource Type</h4>
-            <div className="space-y-3">
+          <fieldset>
+            <legend className="text-sm font-medium mb-3">Resource Type</legend>
+            <div className="space-y-3" role="group" aria-label="Resource type filters">
               {RESOURCE_TYPES.map((type) => (
-                <div key={type.value} className="flex items-center space-x-2">
+                <div key={type.value} className="flex items-center space-x-2 min-h-[44px]">
                   <Checkbox
                     id={type.value}
                     checked={localFilters.resourceTypes.includes(type.value)}
                     onCheckedChange={() => handleResourceTypeToggle(type.value)}
+                    aria-label={`Filter by ${type.label}`}
+                    className="min-h-[24px] min-w-[24px]"
                   />
                   <Label
                     htmlFor={type.value}
-                    className="flex items-center gap-2 cursor-pointer"
+                    className="flex items-center gap-2 cursor-pointer flex-1"
                   >
                     <div
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: type.color }}
+                      aria-hidden="true"
                     />
                     {type.label}
                   </Label>
                 </div>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           <Separator />
 
           {/* Quality Score */}
-          <div>
+          <div role="group" aria-labelledby="quality-label">
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-sm font-medium">Minimum Quality</h4>
-              <span className="text-sm text-muted-foreground">
+              <h4 id="quality-label" className="text-sm font-medium">Minimum Quality</h4>
+              <span 
+                className="text-sm text-muted-foreground"
+                aria-live="polite"
+                aria-label={`Current minimum quality: ${(localFilters.minQuality * 100).toFixed(0)} percent`}
+              >
                 {(localFilters.minQuality * 100).toFixed(0)}%
               </span>
             </div>
@@ -161,8 +181,12 @@ export const FilterPanel = memo<FilterPanelProps>(({
               max={1}
               step={0.1}
               className="w-full"
+              aria-label="Minimum quality score slider"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={localFilters.minQuality * 100}
             />
-            <div className="flex justify-between text-xs text-muted-foreground mt-2">
+            <div className="flex justify-between text-xs text-muted-foreground mt-2" aria-hidden="true">
               <span>0%</span>
               <span>50%</span>
               <span>100%</span>
@@ -182,23 +206,25 @@ export const FilterPanel = memo<FilterPanelProps>(({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-4 border-t space-y-2">
+      <div className="p-3 md:p-4 border-t space-y-2 bg-gradient-to-t from-card/50 to-card">
         <Button
           variant="default"
-          className="w-full"
+          className="w-full min-h-[44px] transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-95"
           onClick={handleApply}
+          aria-label="Apply selected filters to graph"
         >
           Apply Filters
         </Button>
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full min-h-[44px] transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-95"
           onClick={handleClearAll}
+          aria-label="Clear all filters and reset to defaults"
         >
           Clear All
         </Button>
       </div>
-    </div>
+    </aside>
   );
 });
 

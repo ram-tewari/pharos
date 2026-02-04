@@ -23,7 +23,7 @@ Events Subscribed:
 __version__ = "1.0.0"
 __domain__ = "quality"
 
-from .router import router as quality_router
+from .router import quality_router
 from .service import QualityService
 from .evaluator import SummarizationEvaluator
 from .schema import (

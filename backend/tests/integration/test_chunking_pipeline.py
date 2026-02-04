@@ -393,7 +393,12 @@ class TestChunkingPipelineIntegration:
         db_session.add(resource)
         db_session.commit()
         
-        content = "This is test content for transaction testing."
+        # Clean up any existing chunks for this resource (from previous test runs)
+        db_session.query(DocumentChunk).filter_by(resource_id=resource.id).delete()
+        db_session.commit()
+        
+        # Create content that will generate multiple chunks (need at least 3 to trigger failure)
+        content = "Sentence one here. Sentence two here. Sentence three here. Sentence four here. Sentence five here. Sentence six here. Sentence seven here."
         
         # Create mock embedding service that fails after some chunks
         call_count = [0]
@@ -409,18 +414,18 @@ class TestChunkingPipelineIntegration:
         
         chunking_service = ChunkingService(
             db=db_session,
-            strategy="semantic",
-            chunk_size=20,
+            strategy="fixed",  # Use fixed strategy to guarantee chunk count
+            chunk_size=30,     # Small size to create multiple chunks
             overlap=5,
             parser_type="text",
             embedding_service=mock_embedding_service
         )
         
         # Try to chunk and store (should fail)
-        chunks = chunking_service.semantic_chunk(str(resource.id), content)
+        chunks = chunking_service.fixed_chunk(str(resource.id), content)
         
         try:
-            stored_chunks = chunking_service.store_chunks(str(resource.id), chunks)
+            stored_chunks = chunking_service.store_chunks(str(resource.id), chunks, commit=False)
         except Exception:
             # Expected to fail
             db_session.rollback()

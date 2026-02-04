@@ -18,8 +18,8 @@ from .schema import (
     ToolInvocationResult,
 )
 from .service import MCPServer
-from backend.app.modules.mcp.tools import register_all_tools
-from backend.app.shared.database import get_db
+from .tools import register_all_tools
+from ...shared.database import get_sync_db
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ _mcp_server: Optional[MCPServer] = None
 _tools_registered = False
 
 
-def get_mcp_server(db: Session = Depends(get_db)) -> MCPServer:
+def get_mcp_server(db: Session = Depends(get_sync_db)) -> MCPServer:
     """Get MCP server instance"""
     global _mcp_server, _tools_registered
     if _mcp_server is None:

@@ -49,7 +49,7 @@ def test_batch_review_approve(
 
     # Execute batch review
     start_time = time.time()
-    response = client.post("/curation/batch/review", json=batch_request)
+    response = client.post("/api/curation/batch/review", json=batch_request)
     elapsed_time = time.time() - start_time
 
     # Verify response
@@ -104,7 +104,7 @@ def test_batch_review_reject(
         "comment": "Quality too low, needs improvement",
     }
 
-    response = client.post("/curation/batch/review", json=batch_request)
+    response = client.post("/api/curation/batch/review", json=batch_request)
 
     assert response.status_code == 200
     result = response.json()
@@ -143,7 +143,7 @@ def test_batch_review_flag(
         "comment": "Needs manual verification",
     }
 
-    response = client.post("/curation/batch/review", json=batch_request)
+    response = client.post("/api/curation/batch/review", json=batch_request)
 
     assert response.status_code == 200
     result = response.json()
@@ -175,7 +175,7 @@ def test_batch_review_invalid_action(client: TestClient, create_test_resource):
         "curator_id": "curator_123",
     }
 
-    response = client.post("/curation/batch/review", json=batch_request)
+    response = client.post("/api/curation/batch/review", json=batch_request)
 
     # Verify validation error (422 for Pydantic validation)
     assert response.status_code == 422
@@ -208,7 +208,7 @@ def test_batch_review_with_failures(
         "curator_id": "curator_123",
     }
 
-    response = client.post("/curation/batch/review", json=batch_request)
+    response = client.post("/api/curation/batch/review", json=batch_request)
 
     assert response.status_code == 200
     result = response.json()
@@ -250,7 +250,7 @@ def test_batch_tag_resources(
         ],  # Duplicate in different case
     }
 
-    response = client.post("/curation/batch/tag", json=batch_request)
+    response = client.post("/api/curation/batch/tag", json=batch_request)
 
     assert response.status_code == 200
     result = response.json()
@@ -291,7 +291,7 @@ def test_batch_tag_deduplication(
         "tags": ["tag1", "TAG1", " tag1 ", "tag2", "tag2"],
     }
 
-    response = client.post("/curation/batch/tag", json=batch_request)
+    response = client.post("/api/curation/batch/tag", json=batch_request)
 
     assert response.status_code == 200
 
@@ -324,7 +324,7 @@ def test_assign_curator(client: TestClient, db_session: Session, create_test_res
         "curator_id": "curator_alice",
     }
 
-    response = client.post("/curation/batch/assign", json=batch_request)
+    response = client.post("/api/curation/batch/assign", json=batch_request)
 
     assert response.status_code == 200
     result = response.json()
@@ -359,7 +359,7 @@ def test_enhanced_review_queue_by_status(client: TestClient, create_test_resourc
     rejected.curation_status = "rejected"
 
     # Query pending only
-    response = client.get("/curation/queue?status=pending&threshold=0.5")
+    response = client.get("/api/curation/queue?status=pending&threshold=0.5")
 
     assert response.status_code == 200
     result = response.json()
@@ -415,7 +415,7 @@ def test_enhanced_review_queue_quality_range(client: TestClient, create_test_res
     high = create_test_resource(title="High", quality_score=0.8)
 
     # Query medium quality range (0.4 to 0.6)
-    response = client.get("/curation/queue?min_quality=0.4&max_quality=0.6")
+    response = client.get("/api/curation/queue?min_quality=0.4&max_quality=0.6")
 
     assert response.status_code == 200
     result = response.json()
@@ -451,7 +451,7 @@ def test_batch_review_performance(client: TestClient, create_test_resource):
     }
 
     start_time = time.time()
-    response = client.post("/curation/batch/review", json=batch_request)
+    response = client.post("/api/curation/batch/review", json=batch_request)
     elapsed_time = time.time() - start_time
 
     assert response.status_code == 200
@@ -481,7 +481,7 @@ def test_review_queue_pagination_with_filters(client: TestClient, create_test_re
         create_test_resource(title=f"Low Quality {i}", quality_score=0.2 + (i * 0.01))
 
     # Get first page
-    response1 = client.get("/curation/queue?threshold=0.5&limit=10&offset=0")
+    response1 = client.get("/api/curation/queue?threshold=0.5&limit=10&offset=0")
     assert response1.status_code == 200
     page1 = response1.json()
 
@@ -489,7 +489,7 @@ def test_review_queue_pagination_with_filters(client: TestClient, create_test_re
     assert len(page1["items"]) == 10
 
     # Get second page
-    response2 = client.get("/curation/queue?threshold=0.5&limit=10&offset=10")
+    response2 = client.get("/api/curation/queue?threshold=0.5&limit=10&offset=10")
     assert response2.status_code == 200
     page2 = response2.json()
 

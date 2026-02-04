@@ -28,7 +28,7 @@ class TestCollectionLifecycle:
             "visibility": "private",
         }
 
-        response = client.post("/collections", json=payload)
+        response = client.post("/api/collections", json=payload)
 
         # Verify response
         assert response.status_code == 201, (
@@ -90,7 +90,7 @@ class TestCollectionLifecycle:
         payload = {"resource_id": str(resource_id)}
 
         response = client.post(
-            f"/collections/{collection_id}/resources",
+            f"/api/collections/{collection_id}/resources",
             json=payload,
             params={"owner_id": "user123"},
         )
@@ -185,7 +185,7 @@ class TestCollectionLifecycle:
 
         # Remove resource via API
         response = client.delete(
-            f"/collections/{collection_id}/resources/{resource_id}",
+            f"/api/collections/{collection_id}/resources/{resource_id}",
             params={"owner_id": "user123"},
         )
 
@@ -245,7 +245,7 @@ class TestCollectionLifecycle:
 
         # Delete collection via API
         response = client.delete(
-            f"/collections/{collection_id}", params={"owner_id": "user123"}
+            f"/api/collections/{collection_id}", params={"owner_id": "user123"}
         )
 
         # Verify response
@@ -259,3 +259,4 @@ class TestCollectionLifecycle:
         )
 
         assert collection is None, "Collection should be deleted from database"
+

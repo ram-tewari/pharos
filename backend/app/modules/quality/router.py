@@ -40,7 +40,7 @@ from .service import QualityService
 from .evaluator import SummarizationEvaluator
 
 
-router = APIRouter(prefix="/api/quality", tags=["quality"])
+quality_router = APIRouter(prefix="/api/quality", tags=["quality"])
 
 
 def _get_quality_service(db: Session) -> QualityService:
@@ -53,7 +53,7 @@ def _get_summarization_evaluator(db: Session) -> SummarizationEvaluator:
     return SummarizationEvaluator(db)
 
 
-@router.get(
+@quality_router.get(
     "/resources/{resource_id}/quality-details", response_model=QualityDetailsResponse
 )
 async def get_quality_details(
@@ -118,7 +118,7 @@ async def get_quality_details(
     )
 
 
-@router.post("/quality/recalculate", status_code=status.HTTP_202_ACCEPTED)
+@quality_router.post("/quality/recalculate", status_code=status.HTTP_202_ACCEPTED)
 async def recalculate_quality(
     request: QualityRecalculateRequest,
     db: Session = Depends(get_sync_db),
@@ -162,7 +162,7 @@ async def recalculate_quality(
         }
 
 
-@router.get("/quality/outliers", response_model=OutlierListResponse)
+@quality_router.get("/quality/outliers", response_model=OutlierListResponse)
 async def get_outliers(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(50, ge=1, le=100, description="Results per page"),
@@ -218,7 +218,7 @@ async def get_outliers(
     )
 
 
-@router.get("/quality/degradation", response_model=DegradationReport)
+@quality_router.get("/quality/degradation", response_model=DegradationReport)
 async def get_degradation_report(
     time_window_days: int = Query(
         30, ge=1, le=365, description="Lookback period in days"
@@ -250,7 +250,7 @@ async def get_degradation_report(
     )
 
 
-@router.post("/summaries/{resource_id}/evaluate", status_code=status.HTTP_202_ACCEPTED)
+@quality_router.post("/summaries/{resource_id}/evaluate", status_code=status.HTTP_202_ACCEPTED)
 async def evaluate_summary(
     resource_id: str,
     use_g_eval: bool = Query(
@@ -299,7 +299,7 @@ async def evaluate_summary(
             }
 
 
-@router.get("/quality/distribution", response_model=QualityDistributionResponse)
+@quality_router.get("/quality/distribution", response_model=QualityDistributionResponse)
 async def get_quality_distribution(
     bins: int = Query(10, ge=5, le=50, description="Number of histogram bins"),
     dimension: str = Query("overall", description="Quality dimension or 'overall'"),
@@ -378,7 +378,7 @@ async def get_quality_distribution(
     )
 
 
-@router.get("/quality/trends", response_model=QualityTrendsResponse)
+@quality_router.get("/quality/trends", response_model=QualityTrendsResponse)
 async def get_quality_trends(
     granularity: str = Query(
         "weekly", description="Time granularity (daily, weekly, monthly)"
@@ -497,7 +497,7 @@ async def get_quality_trends(
     )
 
 
-@router.get("/quality/dimensions", response_model=QualityDimensionsResponse)
+@quality_router.get("/quality/dimensions", response_model=QualityDimensionsResponse)
 async def get_dimension_averages(
     db: Session = Depends(get_sync_db),
 ):
@@ -556,7 +556,7 @@ async def get_dimension_averages(
     )
 
 
-@router.get("/quality/review-queue", response_model=ReviewQueueResponse)
+@quality_router.get("/quality/review-queue", response_model=ReviewQueueResponse)
 async def get_review_queue(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(50, ge=1, le=100, description="Results per page"),
@@ -616,7 +616,7 @@ async def get_review_queue(
     )
 
 
-@router.get("/quality/health")
+@quality_router.get("/quality/health")
 async def health_check(
     db: Session = Depends(get_sync_db),
 ):
@@ -643,7 +643,7 @@ async def health_check(
 # ============================================================================
 
 
-@router.post(
+@quality_router.post(
     "/evaluation/submit",
     response_model=RAGEvaluationResponse,
     status_code=status.HTTP_201_CREATED,
@@ -712,7 +712,7 @@ async def submit_evaluation(
     )
 
 
-@router.get("/evaluation/metrics")
+@quality_router.get("/evaluation/metrics")
 async def get_evaluation_metrics(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
@@ -821,7 +821,7 @@ async def get_evaluation_metrics(
     }
 
 
-@router.get("/evaluation/history")
+@quality_router.get("/evaluation/history")
 async def get_evaluation_history(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(50, ge=1, le=100, description="Results per page"),

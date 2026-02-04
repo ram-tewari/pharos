@@ -9,6 +9,7 @@ Requirements: 3.1, 3.2, 3.6, 3.7, 8.2, 8.6, 12.2
 import pytest
 import sys
 import json
+import os
 from datetime import datetime, timedelta
 from unittest.mock import Mock, patch, MagicMock
 import torch
@@ -17,6 +18,16 @@ import torch
 sys.modules['upstash_redis'] = MagicMock()
 
 from worker import EdgeWorker
+
+
+@pytest.fixture(autouse=True)
+def mock_redis_env_vars():
+    """Mock Redis environment variables for all tests."""
+    with patch.dict(os.environ, {
+        'UPSTASH_REDIS_REST_URL': 'https://test-redis.upstash.io',
+        'UPSTASH_REDIS_REST_TOKEN': 'test-token'
+    }):
+        yield
 
 
 class TestEdgeWorker:

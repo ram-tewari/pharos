@@ -26,6 +26,9 @@ import { HypothesisPanel } from './HypothesisPanel';
 import { HypothesisDiscoveryModal } from './HypothesisDiscoveryModal';
 import { ExportModal } from './ExportModal';
 import { LegendPanel } from './LegendPanel';
+import { GraphErrorBoundary } from './GraphErrorBoundary';
+import { GraphSkeleton } from './GraphSkeleton';
+import { EmptyGraphState } from './EmptyGraphState';
 import { toast } from 'sonner';
 import type { GraphNode, LayoutAlgorithm, Hypothesis } from '@/types/graph';
 
@@ -50,7 +53,8 @@ export function GraphPage() {
   } = useGraphStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showNodeDetails, setShowNodeDetails] = useState(false);
   const [showHypotheses, setShowHypotheses] = useState(false);
@@ -121,6 +125,7 @@ export function GraphPage() {
 
   const loadGraphData = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       // Load overview by default
       const data = await graphAPI.getOverview(0.5);
@@ -135,11 +140,18 @@ export function GraphPage() {
       });
     } catch (error) {
       console.error('Failed to load graph:', error);
-      toast.error('Failed to load graph data');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load graph data';
+      setLoadError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Retry loading graph data
+  const handleRetry = useCallback(() => {
+    loadGraphData();
+  }, []);
 
   // Handle node click
   const handleNodeClick = useCallback((node: GraphNode) => {
@@ -213,19 +225,99 @@ export function GraphPage() {
 
   // Remove old keyboard shortcuts effect (now handled by hook)
 
+  // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading graph...</p>
+      <div className="flex flex-col h-full">
+        <GraphToolbar
+          viewMode={visualizationMode}
+          onViewModeChange={setVisualizationMode}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          zoom={zoomLevel}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onFitView={resetZoom}
+          onExport={handleExport}
+          onToggleFilters={handleToggleFilters}
+          activeFilterCount={activeFilterCount}
+          showIndicators={showIndicators}
+          onToggleIndicators={() => setShowIndicators((prev) => !prev)}
+        />
+        <div className="flex-1">
+          <GraphSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (loadError) {
+    return (
+      <div className="flex flex-col h-full">
+        <GraphToolbar
+          viewMode={visualizationMode}
+          onViewModeChange={setVisualizationMode}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          zoom={zoomLevel}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onFitView={resetZoom}
+          onExport={handleExport}
+          onToggleFilters={handleToggleFilters}
+          activeFilterCount={activeFilterCount}
+          showIndicators={showIndicators}
+          onToggleIndicators={() => setShowIndicators((prev) => !prev)}
+        />
+        <div className="flex-1">
+          <EmptyGraphState
+            title="Failed to load graph"
+            message={loadError}
+            icon="network"
+            action={{
+              label: 'Try Again',
+              onClick: handleRetry,
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Empty state (no nodes)
+  if (nodes.length === 0) {
+    return (
+      <div className="flex flex-col h-full">
+        <GraphToolbar
+          viewMode={visualizationMode}
+          onViewModeChange={setVisualizationMode}
+          searchQuery={searchQuery}
+          onSearchChange={handleSearchChange}
+          zoom={zoomLevel}
+          onZoomIn={zoomIn}
+          onZoomOut={zoomOut}
+          onFitView={resetZoom}
+          onExport={handleExport}
+          onToggleFilters={handleToggleFilters}
+          activeFilterCount={activeFilterCount}
+          showIndicators={showIndicators}
+          onToggleIndicators={() => setShowIndicators((prev) => !prev)}
+        />
+        <div className="flex-1">
+          <EmptyGraphState
+            title="No graph data available"
+            message="Start by adding resources to your library to build your knowledge graph."
+            icon="network"
+          />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <GraphErrorBoundary>
+      <div className="flex flex-col h-full">
       {/* Toolbar */}
       <GraphToolbar
         viewMode={visualizationMode}
@@ -261,55 +353,95 @@ export function GraphPage() {
           
           {/* Focus Mode Indicator */}
           {isFocusMode && (
-            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium shadow-lg">
-              Focus Mode Active (Shift+F to toggle)
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-medium shadow-lg">
+              <span className="hidden md:inline">Focus Mode Active (Shift+F to toggle)</span>
+              <span className="md:hidden">Focus Mode</span>
             </div>
           )}
         </div>
 
-        {/* Side Panels */}
+        {/* Side Panels - Desktop: Fixed width sidebar, Mobile: Full-screen overlay */}
         {showFilters && (
-          <div className="w-80 shrink-0">
-            <FilterPanel
-              filters={filters}
-              onFiltersChange={handleFiltersChange}
-              onClose={() => setShowFilters(false)}
+          <>
+            {/* Mobile backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={() => setShowFilters(false)}
+              aria-hidden="true"
             />
-          </div>
+            {/* Panel */}
+            <div className={`
+              fixed inset-y-0 right-0 w-full z-50
+              transform transition-transform duration-300 ease-in-out
+              md:relative md:w-80 md:shrink-0 md:transform-none md:z-auto
+              ${showFilters ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+            `}>
+              <FilterPanel
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                onClose={() => setShowFilters(false)}
+              />
+            </div>
+          </>
         )}
 
         {showNodeDetails && (
-          <div className="w-80 shrink-0">
-            <NodeDetailsPanel
-              node={selectedNode}
-              onClose={handleNodeDetailsClose}
+          <>
+            {/* Mobile backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={handleNodeDetailsClose}
+              aria-hidden="true"
             />
-          </div>
+            {/* Panel */}
+            <div className={`
+              fixed inset-y-0 right-0 w-full z-50
+              transform transition-transform duration-300 ease-in-out
+              md:relative md:w-80 md:shrink-0 md:transform-none md:z-auto
+              ${showNodeDetails ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+            `}>
+              <NodeDetailsPanel
+                node={selectedNode}
+                onClose={handleNodeDetailsClose}
+              />
+            </div>
+          </>
         )}
 
         {showHypotheses && (
-          <div className="w-80 shrink-0">
-            <HypothesisPanel
-              hypotheses={hypotheses}
-              onHypothesisClick={handleHypothesisClick}
-              onDiscoverNew={handleDiscoverNew}
-              onClose={() => setShowHypotheses(false)}
+          <>
+            {/* Mobile backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/50 z-40 md:hidden"
+              onClick={() => setShowHypotheses(false)}
+              aria-hidden="true"
             />
-          </div>
+            {/* Panel */}
+            <div className={`
+              fixed inset-y-0 right-0 w-full z-50
+              transform transition-transform duration-300 ease-in-out
+              md:relative md:w-80 md:shrink-0 md:transform-none md:z-auto
+              ${showHypotheses ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}
+            `}>
+              <HypothesisPanel
+                hypotheses={hypotheses}
+                onHypothesisClick={handleHypothesisClick}
+                onDiscoverNew={handleDiscoverNew}
+                onClose={() => setShowHypotheses(false)}
+              />
+            </div>
+          </>
         )}
       </div>
 
-      {/* Empty State */}
-      {filteredNodes.length === 0 && (
+      {/* Empty State - No filtered results */}
+      {filteredNodes.length === 0 && nodes.length > 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-center">
-            <p className="text-lg font-medium text-muted-foreground mb-2">
-              No nodes match your filters
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Try adjusting your search or filters
-            </p>
-          </div>
+          <EmptyGraphState
+            title="No nodes match your filters"
+            message="Try adjusting your search or filters to see more results."
+            icon="filter"
+          />
         </div>
       )}
 
@@ -325,6 +457,7 @@ export function GraphPage() {
         onOpenChange={setShowExportModal}
         graphData={{ nodes, edges, metadata: undefined }}
       />
-    </div>
+      </div>
+    </GraphErrorBoundary>
   );
 }

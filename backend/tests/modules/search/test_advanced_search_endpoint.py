@@ -78,7 +78,7 @@ def test_advanced_search_parent_child_strategy(client, sample_resource_with_chun
     """
     # Make request
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={
             "query": "machine learning",
             "strategy": "parent-child",
@@ -119,7 +119,7 @@ def test_advanced_search_parent_child_with_context_window(
     """
     # Make request with context_window=2
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={
             "query": "machine learning",
             "strategy": "parent-child",
@@ -154,7 +154,7 @@ def test_advanced_search_parent_child_result_structure(
     """
     # Make request
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "machine learning", "strategy": "parent-child", "top_k": 10},
     )
 
@@ -203,7 +203,7 @@ def test_advanced_search_graphrag_strategy(client, sample_graph_data):
     """
     # Make request
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "neural networks", "strategy": "graphrag", "top_k": 10},
     )
 
@@ -229,7 +229,7 @@ def test_advanced_search_graphrag_with_relation_types(client, sample_graph_data)
     """
     # Make request with relation_types filter
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={
             "query": "machine learning",
             "strategy": "graphrag",
@@ -259,7 +259,7 @@ def test_advanced_search_graphrag_graph_path_structure(client, sample_graph_data
     """
     # Make request
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "neural networks", "strategy": "graphrag", "top_k": 10},
     )
 
@@ -300,7 +300,7 @@ def test_advanced_search_hybrid_strategy(
     """
     # Make request
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={
             "query": "machine learning",
             "strategy": "hybrid",
@@ -333,7 +333,7 @@ def test_advanced_search_hybrid_deduplication(
     """
     # Make request
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "machine learning", "strategy": "hybrid", "top_k": 10},
     )
 
@@ -364,7 +364,7 @@ def test_advanced_search_invalid_strategy(client):
     """
     # Make request with invalid strategy
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "test", "strategy": "invalid-strategy", "top_k": 10},
     )
 
@@ -384,7 +384,7 @@ def test_advanced_search_empty_query(client):
     """
     # Make request with empty query
     response = client.post(
-        "/search/advanced", json={"query": "", "strategy": "parent-child", "top_k": 10}
+        "/api/search/advanced", json={"query": "", "strategy": "parent-child", "top_k": 10}
     )
 
     # Assert error response
@@ -403,14 +403,14 @@ def test_advanced_search_invalid_top_k(client):
     """
     # Test top_k = 0
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "test", "strategy": "parent-child", "top_k": 0},
     )
     assert response.status_code == 422
 
     # Test top_k = 101
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "test", "strategy": "parent-child", "top_k": 101},
     )
     assert response.status_code == 422
@@ -428,7 +428,7 @@ def test_advanced_search_invalid_context_window(client):
     """
     # Test context_window = -1
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={
             "query": "test",
             "strategy": "parent-child",
@@ -440,7 +440,7 @@ def test_advanced_search_invalid_context_window(client):
 
     # Test context_window = 6
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={
             "query": "test",
             "strategy": "parent-child",
@@ -463,7 +463,7 @@ def test_advanced_search_default_parameters(client, sample_resource_with_chunks)
     **Validates: Requirements 8.1-8.10, 9.1-9.10**
     """
     # Make request with minimal parameters
-    response = client.post("/search/advanced", json={"query": "machine learning"})
+    response = client.post("/api/search/advanced", json={"query": "machine learning"})
 
     # Assert response
     assert response.status_code == 200
@@ -491,7 +491,7 @@ def test_advanced_search_latency_tracking(client, sample_resource_with_chunks):
     """
     # Make request
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "machine learning", "strategy": "parent-child", "top_k": 10},
     )
 
@@ -518,7 +518,7 @@ def test_advanced_search_top_k_limit(client, sample_resource_with_chunks):
     """
     # Make request with top_k=1
     response = client.post(
-        "/search/advanced",
+        "/api/search/advanced",
         json={"query": "machine learning", "strategy": "parent-child", "top_k": 1},
     )
 

@@ -7,6 +7,7 @@ Tests cover:
 """
 
 import pytest
+import pytest_asyncio
 import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -28,7 +29,7 @@ from app.shared.database import Base
 # ============================================================================
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_engine():
     """Create async SQLite engine for testing."""
     engine = create_async_engine(
@@ -51,7 +52,7 @@ async def async_engine():
     await engine.dispose()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_db_session(async_engine):
     """Create async database session for testing."""
     async_session_maker = async_sessionmaker(
@@ -68,7 +69,7 @@ async def async_db_session(async_engine):
 # ============================================================================
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(async_db_session):
     """Create a test user for service tests."""
     user = User(
@@ -85,7 +86,7 @@ async def test_user(async_db_session):
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def inactive_user(async_db_session):
     """Create an inactive test user."""
     user = User(
@@ -105,7 +106,6 @@ async def inactive_user(async_db_session):
 # ============================================================================
 # authenticate_user() Tests
 # ============================================================================
-
 
 @pytest.mark.asyncio
 async def test_authenticate_user_with_valid_username(async_db_session, test_user):

@@ -49,7 +49,7 @@ def test_create_resource_chunks_success(
 
     # Make API request
     response = client.post(
-        f"/resources/{resource.id}/chunks",
+        f"/api/resources/{resource.id}/chunks",
         json={
             "strategy": "semantic",
             "chunk_size": 500,
@@ -102,7 +102,7 @@ def test_create_resource_chunks_resource_not_found(client: TestClient):
 
     # Make API request
     response = client.post(
-        f"/resources/{fake_resource_id}/chunks",
+        f"/api/resources/{fake_resource_id}/chunks",
         json={"strategy": "semantic", "chunk_size": 500, "overlap": 50},
     )
 
@@ -142,7 +142,7 @@ def test_create_resource_chunks_no_content(client: TestClient, create_test_resou
 
     # Make API request
     response = client.post(
-        f"/resources/{resource.id}/chunks",
+        f"/api/resources/{resource.id}/chunks",
         json={"strategy": "semantic", "chunk_size": 500, "overlap": 50},
     )
 
@@ -195,7 +195,7 @@ def test_create_resource_chunks_invalid_strategy(
 
     # Make API request with invalid strategy
     response = client.post(
-        f"/resources/{resource.id}/chunks",
+        f"/api/resources/{resource.id}/chunks",
         json={"strategy": "invalid_strategy", "chunk_size": 500, "overlap": 50},
     )
 
@@ -251,7 +251,7 @@ def test_create_resource_chunks_overlap_too_large(
 
     # Make API request with overlap >= chunk_size
     response = client.post(
-        f"/resources/{resource.id}/chunks",
+        f"/api/resources/{resource.id}/chunks",
         json={
             "strategy": "semantic",
             "chunk_size": 100,
@@ -311,7 +311,7 @@ def test_list_resource_chunks_success(
     db_session.commit()
 
     # Make API request
-    response = client.get(f"/resources/{resource.id}/chunks?limit=3&offset=0")
+    response = client.get(f"/api/resources/{resource.id}/chunks?limit=3&offset=0")
 
     # Verify HTTP response status
     assert response.status_code == 200, (
@@ -393,7 +393,7 @@ def test_list_resource_chunks_pagination(
     db_session.commit()
 
     # Make API request for second page
-    response = client.get(f"/resources/{resource.id}/chunks?limit=3&offset=3")
+    response = client.get(f"/api/resources/{resource.id}/chunks?limit=3&offset=3")
 
     # Verify HTTP response status
     assert response.status_code == 200, (
@@ -431,7 +431,7 @@ def test_list_resource_chunks_resource_not_found(client: TestClient):
     fake_resource_id = uuid.uuid4()
 
     # Make API request
-    response = client.get(f"/resources/{fake_resource_id}/chunks")
+    response = client.get(f"/api/resources/{fake_resource_id}/chunks")
 
     # Verify HTTP response status
     assert response.status_code == 404, (
@@ -469,21 +469,21 @@ def test_list_resource_chunks_invalid_pagination(
     )
 
     # Test invalid limit (too large)
-    response = client.get(f"/resources/{resource.id}/chunks?limit=200")
+    response = client.get(f"/api/resources/{resource.id}/chunks?limit=200")
     assert response.status_code == 400, (
         f"IMPLEMENTATION FAILURE: Expected status 400 for limit > 100, got {response.status_code}\n"
         f"DO NOT UPDATE THE TEST - Fix the implementation instead."
     )
 
     # Test invalid limit (zero)
-    response = client.get(f"/resources/{resource.id}/chunks?limit=0")
+    response = client.get(f"/api/resources/{resource.id}/chunks?limit=0")
     assert response.status_code == 400, (
         f"IMPLEMENTATION FAILURE: Expected status 400 for limit = 0, got {response.status_code}\n"
         f"DO NOT UPDATE THE TEST - Fix the implementation instead."
     )
 
     # Test invalid offset (negative)
-    response = client.get(f"/resources/{resource.id}/chunks?offset=-1")
+    response = client.get(f"/api/resources/{resource.id}/chunks?offset=-1")
     assert response.status_code == 400, (
         f"IMPLEMENTATION FAILURE: Expected status 400 for negative offset, got {response.status_code}\n"
         f"DO NOT UPDATE THE TEST - Fix the implementation instead."

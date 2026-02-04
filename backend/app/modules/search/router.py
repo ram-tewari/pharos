@@ -42,11 +42,24 @@ from .schema import (
     GraphPathNode,
 )
 from ..resources.schema import ResourceRead
-from ...services.search_service import AdvancedSearchService
+# Lazy import to avoid circular dependency
+# from ...services.search_service import AdvancedSearchService
 from .sparse_embeddings import SparseEmbeddingService
 from ...database.models import Resource
-from .service import SearchService
+# Lazy import to avoid circular dependency
+# from .service import SearchService
 
+
+def _get_advanced_search_service():
+    """Lazy import to avoid circular dependency."""
+    from ...services.search_service import AdvancedSearchService
+    return AdvancedSearchService
+
+
+def _get_search_service(db: Session):
+    """Lazy import to avoid circular dependency."""
+    from .service import SearchService
+    return SearchService(db)
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
@@ -64,6 +77,7 @@ def search_endpoint(payload: SearchQuery, db: Session = Depends(get_sync_db)):
     - Search result snippets
     """
     try:
+        AdvancedSearchService = _get_advanced_search_service()
         result = AdvancedSearchService.search(db, payload)
         if len(result) == 4:
             items, total, facets, snippets = result
@@ -119,6 +133,7 @@ def three_way_hybrid_search_endpoint(
             text=query, limit=limit, offset=offset, hybrid_weight=hybrid_weight
         )
 
+        AdvancedSearchService = _get_advanced_search_service()
         resources, total, facets, snippets, metadata = (
             AdvancedSearchService.search_three_way_hybrid(
                 db=db,
@@ -181,6 +196,7 @@ def compare_search_methods_endpoint(
 
     # 1. FTS5 Only
     try:
+        AdvancedSearchService = _get_advanced_search_service()
         start = time.time()
         fts5_query = SearchQuery(text=query, limit=limit, offset=0, hybrid_weight=0.0)
         result = AdvancedSearchService.search(db, fts5_query)
@@ -202,6 +218,7 @@ def compare_search_methods_endpoint(
 
     # 2. Dense Only
     try:
+        AdvancedSearchService = _get_advanced_search_service()
         start = time.time()
         dense_query = SearchQuery(text=query, limit=limit, offset=0, hybrid_weight=1.0)
         result = AdvancedSearchService.search(db, dense_query)
@@ -256,6 +273,7 @@ def compare_search_methods_endpoint(
 
     # 4. Two-Way Hybrid
     try:
+        AdvancedSearchService = _get_advanced_search_service()
         start = time.time()
         result = AdvancedSearchService.hybrid_search(db, base_query, hybrid_weight=0.5)
         latency = (time.time() - start) * 1000
@@ -276,6 +294,7 @@ def compare_search_methods_endpoint(
 
     # 5. Three-Way Hybrid
     try:
+        AdvancedSearchService = _get_advanced_search_service()
         start = time.time()
         resources, total, _, _, _ = AdvancedSearchService.search_three_way_hybrid(
             db=db, query=base_query, enable_reranking=False, adaptive_weighting=True
@@ -293,6 +312,7 @@ def compare_search_methods_endpoint(
 
     # 6. Three-Way with Reranking
     try:
+        AdvancedSearchService = _get_advanced_search_service()
         start = time.time()
         resources, total, _, _, _ = AdvancedSearchService.search_three_way_hybrid(
             db=db, query=base_query, enable_reranking=True, adaptive_weighting=True
@@ -337,6 +357,7 @@ def evaluate_search_endpoint(
     try:
         from ...services.search_metrics_service import SearchMetricsService
 
+        AdvancedSearchService = _get_advanced_search_service()
         search_query = SearchQuery(text=payload.query, limit=100, offset=0)
         resources, _, _, _, _ = AdvancedSearchService.search_three_way_hybrid(
             db=db, query=search_query, enable_reranking=True, adaptive_weighting=True
@@ -373,6 +394,7 @@ def evaluate_search_endpoint(
 
         baseline_comparison = None
         try:
+            AdvancedSearchService = _get_advanced_search_service()
             baseline_resources, _, _, _ = AdvancedSearchService.hybrid_search(
                 db=db, query=search_query, hybrid_weight=0.5
             )
@@ -533,7 +555,7 @@ def advanced_search_endpoint(
     """
     try:
         start_time = time.time()
-        search_service = SearchService(db)
+        search_service = _get_search_service(db)
 
         if payload.strategy == "parent-child":
             # Parent-child retrieval

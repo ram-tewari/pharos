@@ -45,7 +45,7 @@ class TestRepoIngestionEndpoints:
 
             # Make API request
             response = client.post(
-                "/resources/ingest-repo", json={"path": str(test_dir)}
+                "/api/resources/ingest-repo", json={"path": str(test_dir)}
             )
 
             # Verify HTTP response status
@@ -100,7 +100,7 @@ class TestRepoIngestionEndpoints:
 
             # Make API request with Git URL
             response = client.post(
-                "/resources/ingest-repo",
+                "/api/resources/ingest-repo",
                 json={"git_url": "https://github.com/test/repo.git"},
             )
 
@@ -145,7 +145,7 @@ class TestRepoIngestionEndpoints:
         fake_path = "/nonexistent/path/to/repo"
 
         # Make API request
-        response = client.post("/resources/ingest-repo", json={"path": fake_path})
+        response = client.post("/api/resources/ingest-repo", json={"path": fake_path})
 
         # Verify HTTP response status
         assert response.status_code == 400, (
@@ -182,7 +182,7 @@ class TestRepoIngestionEndpoints:
         test_file.write_text("test content")
 
         # Make API request
-        response = client.post("/resources/ingest-repo", json={"path": str(test_file)})
+        response = client.post("/api/resources/ingest-repo", json={"path": str(test_file)})
 
         # Verify HTTP response status
         assert response.status_code == 400, (
@@ -211,7 +211,7 @@ class TestRepoIngestionEndpoints:
         """
         # Make API request with invalid URL
         response = client.post(
-            "/resources/ingest-repo", json={"git_url": "not-a-valid-url"}
+            "/api/resources/ingest-repo", json={"git_url": "not-a-valid-url"}
         )
 
         # Verify HTTP response status
@@ -241,7 +241,7 @@ class TestRepoIngestionEndpoints:
         """
         # Make API request with HTTP URL (not HTTPS)
         response = client.post(
-            "/resources/ingest-repo",
+            "/api/resources/ingest-repo",
             json={"git_url": "http://github.com/test/repo.git"},
         )
 
@@ -276,7 +276,7 @@ class TestRepoIngestionEndpoints:
 
         # Make API request with both path and git_url
         response = client.post(
-            "/resources/ingest-repo",
+            "/api/resources/ingest-repo",
             json={"path": str(test_dir), "git_url": "https://github.com/test/repo.git"},
         )
 
@@ -298,7 +298,7 @@ class TestRepoIngestionEndpoints:
         Requirements: 6.4
         """
         # Make API request with empty body
-        response = client.post("/resources/ingest-repo", json={})
+        response = client.post("/api/resources/ingest-repo", json={})
 
         # Verify HTTP response status (422 for validation error)
         assert response.status_code == 422, (
@@ -328,7 +328,7 @@ class TestRepoIngestionEndpoints:
             mock_result.return_value = mock_task
 
             # Make API request
-            response = client.get(f"/resources/ingest-repo/{task_id}/status")
+            response = client.get(f"/api/resources/ingest-repo/{task_id}/status")
 
             # Verify HTTP response status
             assert response.status_code == 200, (
@@ -385,7 +385,7 @@ class TestRepoIngestionEndpoints:
             mock_result.return_value = mock_task
 
             # Make API request
-            response = client.get(f"/resources/ingest-repo/{task_id}/status")
+            response = client.get(f"/api/resources/ingest-repo/{task_id}/status")
 
             # Verify HTTP response status
             assert response.status_code == 200, (
@@ -450,7 +450,7 @@ class TestRepoIngestionEndpoints:
             mock_result.return_value = mock_task
 
             # Make API request
-            response = client.get(f"/resources/ingest-repo/{task_id}/status")
+            response = client.get(f"/api/resources/ingest-repo/{task_id}/status")
 
             # Verify HTTP response status
             assert response.status_code == 200, (
@@ -497,7 +497,7 @@ class TestRepoIngestionEndpoints:
             mock_result.return_value = mock_task
 
             # Make API request
-            response = client.get(f"/resources/ingest-repo/{task_id}/status")
+            response = client.get(f"/api/resources/ingest-repo/{task_id}/status")
 
             # Verify HTTP response status
             assert response.status_code == 200, (
@@ -629,7 +629,7 @@ class TestRepoIngestionEndToEnd:
 
             # Step 1: Trigger ingestion
             ingest_response = client.post(
-                "/resources/ingest-repo", json={"path": str(test_dir)}
+                "/api/resources/ingest-repo", json={"path": str(test_dir)}
             )
 
             assert ingest_response.status_code == 200, (
@@ -646,7 +646,7 @@ class TestRepoIngestionEndToEnd:
             mock_task_obj.info = None
             mock_result.return_value = mock_task_obj
 
-            status_response = client.get(f"/resources/ingest-repo/{task_id}/status")
+            status_response = client.get(f"/api/resources/ingest-repo/{task_id}/status")
             assert status_response.status_code == 200, "Status check should succeed"
             assert status_response.json()["status"] == "PENDING", (
                 "Status should be PENDING"
@@ -656,7 +656,7 @@ class TestRepoIngestionEndToEnd:
             mock_task_obj.state = "PROCESSING"
             mock_task_obj.info = {"current": 2, "total": 3, "current_file": "utils.py"}
 
-            status_response = client.get(f"/resources/ingest-repo/{task_id}/status")
+            status_response = client.get(f"/api/resources/ingest-repo/{task_id}/status")
             assert status_response.status_code == 200, "Status check should succeed"
             assert status_response.json()["status"] == "PROCESSING", (
                 "Status should be PROCESSING"
@@ -672,7 +672,7 @@ class TestRepoIngestionEndToEnd:
                 "completed_at": "2024-01-01T00:10:00",
             }
 
-            status_response = client.get(f"/resources/ingest-repo/{task_id}/status")
+            status_response = client.get(f"/api/resources/ingest-repo/{task_id}/status")
             assert status_response.status_code == 200, "Status check should succeed"
             assert status_response.json()["status"] == "COMPLETED", (
                 "Status should be COMPLETED"

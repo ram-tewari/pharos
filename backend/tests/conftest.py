@@ -11,12 +11,23 @@ import os
 
 os.environ["TESTING"] = "true"
 
+import logging
+import sys
+from pathlib import Path
 import pytest
+import pytest_asyncio
 from typing import Generator
 from unittest.mock import MagicMock, patch
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.testclient import TestClient
+
+# Add deployment directory to Python path for worker module imports
+deployment_dir = Path(__file__).parent.parent / "deployment"
+if str(deployment_dir) not in sys.path:
+    sys.path.insert(0, str(deployment_dir))
+
+logger = logging.getLogger(__name__)
 
 # Direct imports from application code only
 from app.shared.database import Base
@@ -122,7 +133,7 @@ def db_session(db_engine) -> Generator[Session, None, None]:
         session.close()
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def async_db_engine():
     """
     Create an async SQLite engine for auth tests.
@@ -152,7 +163,7 @@ async def async_db_engine():
     await engine.dispose()
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def async_db_session(async_db_engine):
     """
     Create an async database session for auth tests.
@@ -171,6 +182,52 @@ async def async_db_session(async_db_engine):
             yield session
         finally:
             await session.rollback()
+
+
+@pytest_asyncio.fixture(scope="function")
+async def async_client(async_db_session):
+    """
+    Create an AsyncClient with async database session for integration tests.
+
+    This provides a true async HTTP client for testing async endpoints.
+    Uses httpx.AsyncClient with ASGITransport.
+    
+    In test mode, modules are not auto-registered. Tests that need specific
+    modules should register them manually using app.include_router().
+    """
+    from httpx import AsyncClient, ASGITransport
+    from app.shared.database import get_db, get_sync_db
+    from fastapi import APIRouter
+
+    # Create app instance for testing (database already initialized by fixture)
+    app = create_app()
+    
+    # Note: Modules are now auto-registered in create_app(), no need to manually register
+
+    async def override_get_async_db():
+        try:
+            yield async_db_session
+        finally:
+            pass
+
+    def override_get_sync_db():
+        try:
+            # For sync endpoints, we need to provide a sync session
+            # This is a workaround - ideally all endpoints should be async
+            yield async_db_session
+        finally:
+            pass
+
+    # Override both database dependencies
+    app.dependency_overrides[get_db] = override_get_async_db
+    app.dependency_overrides[get_sync_db] = override_get_sync_db
+
+    # Create AsyncClient with ASGITransport
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+
+    app.dependency_overrides.clear()
 
 
 # ============================================================================
@@ -342,11 +399,16 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, None, 
 
     NOTE: This client bypasses authentication middleware for convenience.
     Use authenticated_client if you need to test with actual JWT tokens.
+    
+    In test mode, modules are not auto-registered. Tests that need specific
+    modules should register them manually using app.include_router().
     """
     from app.shared.database import get_sync_db, get_db
 
     # Create app instance for testing
     app = create_app()
+    
+    # Note: Modules are now auto-registered in create_app(), no need to manually register
 
     def override_get_sync_db():
         try:
@@ -462,46 +524,6 @@ def unauthenticated_client(db_session: Session) -> Generator[TestClient, None, N
 
     with TestClient(app) as test_client:
         yield test_client
-
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture(scope="function")
-async def async_client(async_db_session):
-    """
-    Create an AsyncClient with async database session for integration tests.
-
-    This provides a true async HTTP client for testing async endpoints.
-    Uses httpx.AsyncClient with ASGITransport.
-    """
-    from httpx import AsyncClient, ASGITransport
-    from app.shared.database import get_db, get_sync_db
-
-    # Create app instance for testing (database already initialized by fixture)
-    app = create_app()
-
-    async def override_get_async_db():
-        try:
-            yield async_db_session
-        finally:
-            pass
-
-    def override_get_sync_db():
-        try:
-            # For sync endpoints, we need to provide a sync session
-            # This is a workaround - ideally all endpoints should be async
-            yield async_db_session
-        finally:
-            pass
-
-    # Override both database dependencies
-    app.dependency_overrides[get_db] = override_get_async_db
-    app.dependency_overrides[get_sync_db] = override_get_sync_db
-
-    # Create AsyncClient with ASGITransport
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
 
     app.dependency_overrides.clear()
 

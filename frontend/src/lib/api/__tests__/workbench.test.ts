@@ -123,7 +123,7 @@ describe('workbenchApi', () => {
 
       const result = await workbenchApi.getResources();
 
-      expect(apiClient.get).toHaveBeenCalledWith('/resources', { params: undefined });
+      expect(apiClient.get).toHaveBeenCalledWith('/api/resources', { params: undefined });
       expect(result).toEqual(mockResources);
     });
 
@@ -151,7 +151,7 @@ describe('workbenchApi', () => {
 
       const result = await workbenchApi.getResources(params);
 
-      expect(apiClient.get).toHaveBeenCalledWith('/resources', { params });
+      expect(apiClient.get).toHaveBeenCalledWith('/api/resources', { params });
       expect(result).toEqual(mockResources);
     });
 

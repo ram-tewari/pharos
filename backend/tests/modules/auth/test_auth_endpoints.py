@@ -10,6 +10,7 @@ Tests cover:
 """
 
 import pytest
+import pytest_asyncio
 import uuid
 from unittest.mock import AsyncMock, patch
 from fastapi import status
@@ -25,7 +26,7 @@ from app.shared.security import get_password_hash
 # ============================================================================
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(async_db_session):
     """Create a test user for authentication tests."""
     user = User(
@@ -42,7 +43,7 @@ async def test_user(async_db_session):
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def premium_user(async_db_session):
     """Create a premium tier test user."""
     user = User(
@@ -59,7 +60,7 @@ async def premium_user(async_db_session):
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def inactive_user(async_db_session):
     """Create an inactive test user."""
     user = User(
@@ -81,10 +82,11 @@ async def inactive_user(async_db_session):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_login_with_valid_credentials(async_client, test_user):
     """Test login with valid username and password."""
     response = await async_client.post(
-        "/auth/login", data={"username": "testuser", "password": "testpassword123"}
+        "/api/auth/login", data={"username": "testuser", "password": "testpassword123"}
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -97,10 +99,11 @@ async def test_login_with_valid_credentials(async_client, test_user):
     assert len(data["refresh_token"]) > 0
 
 
+@pytest.mark.asyncio
 async def test_login_with_email(async_client, test_user):
     """Test login with email instead of username."""
     response = await async_client.post(
-        "/auth/login",
+        "/api/auth/login",
         data={"username": "test@example.com", "password": "testpassword123"},
     )
 
@@ -109,29 +112,32 @@ async def test_login_with_email(async_client, test_user):
     assert "access_token" in data
 
 
+@pytest.mark.asyncio
 async def test_login_with_invalid_password(async_client, test_user):
     """Test login with incorrect password."""
     response = await async_client.post(
-        "/auth/login", data={"username": "testuser", "password": "wrongpassword"}
+        "/api/auth/login", data={"username": "testuser", "password": "wrongpassword"}
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
     assert "detail" in response.json()
 
 
+@pytest.mark.asyncio
 async def test_login_with_nonexistent_user(async_client):
     """Test login with username that doesn't exist."""
     response = await async_client.post(
-        "/auth/login", data={"username": "nonexistent", "password": "somepassword"}
+        "/api/auth/login", data={"username": "nonexistent", "password": "somepassword"}
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+@pytest.mark.asyncio
 async def test_login_with_inactive_user(async_client, inactive_user):
     """Test login with inactive user account."""
     response = await async_client.post(
-        "/auth/login", data={"username": "inactiveuser", "password": "inactivepass123"}
+        "/api/auth/login", data={"username": "inactiveuser", "password": "inactivepass123"}
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -142,17 +148,18 @@ async def test_login_with_inactive_user(async_client, inactive_user):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_token_refresh_with_valid_token(async_client, test_user):
     """Test refreshing access token with valid refresh token."""
     # First login to get tokens
     login_response = await async_client.post(
-        "/auth/login", data={"username": "testuser", "password": "testpassword123"}
+        "/api/auth/login", data={"username": "testuser", "password": "testpassword123"}
     )
 
     refresh_token = login_response.json()["refresh_token"]
 
     # Refresh the token
-    response = await async_client.post("/auth/refresh", json={"refresh_token": refresh_token})
+    response = await async_client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -162,26 +169,28 @@ async def test_token_refresh_with_valid_token(async_client, test_user):
     assert data["refresh_token"] == refresh_token  # Same refresh token returned
 
 
+@pytest.mark.asyncio
 async def test_token_refresh_with_invalid_token(async_client):
     """Test token refresh with invalid refresh token."""
     response = await async_client.post(
-        "/auth/refresh", json={"refresh_token": "invalid.token.here"}
+        "/api/auth/refresh", json={"refresh_token": "invalid.token.here"}
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
 
+@pytest.mark.asyncio
 async def test_token_refresh_with_access_token(async_client, test_user):
     """Test token refresh with access token (should fail)."""
     # Login to get access token
     login_response = await async_client.post(
-        "/auth/login", data={"username": "testuser", "password": "testpassword123"}
+        "/api/auth/login", data={"username": "testuser", "password": "testpassword123"}
     )
 
     access_token = login_response.json()["access_token"]
 
     # Try to refresh with access token (wrong type)
-    response = await async_client.post("/auth/refresh", json={"refresh_token": access_token})
+    response = await async_client.post("/api/auth/refresh", json={"refresh_token": access_token})
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -191,27 +200,29 @@ async def test_token_refresh_with_access_token(async_client, test_user):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_logout_with_valid_token(async_client, test_user):
     """Test logout with valid access token."""
     # Login first
     login_response = await async_client.post(
-        "/auth/login", data={"username": "testuser", "password": "testpassword123"}
+        "/api/auth/login", data={"username": "testuser", "password": "testpassword123"}
     )
 
     access_token = login_response.json()["access_token"]
 
     # Logout
     response = await async_client.post(
-        "/auth/logout", headers={"Authorization": f"Bearer {access_token}"}
+        "/api/auth/logout", headers={"Authorization": f"Bearer {access_token}"}
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert "message" in response.json()
 
 
+@pytest.mark.asyncio
 async def test_logout_without_token(async_client):
     """Test logout without authentication token."""
-    response = await async_client.post("/auth/logout")
+    response = await async_client.post("/api/auth/logout")
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -221,6 +232,7 @@ async def test_logout_without_token(async_client):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_google_login_initiation(async_client):
     """Test initiating Google OAuth2 flow."""
     with patch("app.modules.auth.service.get_settings") as mock_settings:
@@ -228,7 +240,7 @@ async def test_google_login_initiation(async_client):
         mock_settings.return_value.GOOGLE_CLIENT_SECRET.get_secret_value.return_value = "test_secret"
         mock_settings.return_value.GOOGLE_REDIRECT_URI = "http://localhost/callback"
 
-        response = await async_client.get("/auth/google")
+        response = await async_client.get("/api/auth/google")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -238,17 +250,19 @@ async def test_google_login_initiation(async_client):
         assert "accounts.google.com" in data["authorization_url"]
 
 
+@pytest.mark.asyncio
 async def test_google_login_not_configured(async_client):
     """Test Google OAuth2 when not configured."""
     with patch("app.modules.auth.service.get_settings") as mock_settings:
         mock_settings.return_value.GOOGLE_CLIENT_ID = None
         mock_settings.return_value.GOOGLE_CLIENT_SECRET = None
 
-        response = await async_client.get("/auth/google")
+        response = await async_client.get("/api/auth/google")
 
         assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
 
 
+@pytest.mark.asyncio
 async def test_google_callback_success(async_client, async_db_session):
     """Test successful Google OAuth2 callback."""
     mock_token_data = {"access_token": "mock_google_token"}
@@ -271,7 +285,7 @@ async def test_google_callback_success(async_client, async_db_session):
         mock_provider.return_value = mock_provider_instance
 
         response = await async_client.get(
-            "/auth/google/callback", params={"code": "test_code", "state": "test_state"}
+            "/api/auth/google/callback", params={"code": "test_code", "state": "test_state"}
         )
 
         assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
@@ -293,6 +307,7 @@ async def test_google_callback_success(async_client, async_db_session):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_github_login_initiation(async_client):
     """Test initiating GitHub OAuth2 flow."""
     with patch("app.modules.auth.service.get_settings") as mock_settings:
@@ -300,7 +315,7 @@ async def test_github_login_initiation(async_client):
         mock_settings.return_value.GITHUB_CLIENT_SECRET.get_secret_value.return_value = "test_secret"
         mock_settings.return_value.GITHUB_REDIRECT_URI = "http://localhost/callback"
 
-        response = await async_client.get("/auth/github")
+        response = await async_client.get("/api/auth/github")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -310,17 +325,19 @@ async def test_github_login_initiation(async_client):
         assert "github.com" in data["authorization_url"]
 
 
+@pytest.mark.asyncio
 async def test_github_login_not_configured(async_client):
     """Test GitHub OAuth2 when not configured."""
     with patch("app.modules.auth.service.get_settings") as mock_settings:
         mock_settings.return_value.GITHUB_CLIENT_ID = None
         mock_settings.return_value.GITHUB_CLIENT_SECRET = None
 
-        response = await async_client.get("/auth/github")
+        response = await async_client.get("/api/auth/github")
 
         assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
 
 
+@pytest.mark.asyncio
 async def test_github_callback_success(async_client, async_db_session):
     """Test successful GitHub OAuth2 callback."""
     mock_token_data = {"access_token": "mock_github_token"}
@@ -339,7 +356,7 @@ async def test_github_callback_success(async_client, async_db_session):
         mock_provider.return_value = mock_provider_instance
 
         response = await async_client.get(
-            "/auth/github/callback", params={"code": "test_code", "state": "test_state"}
+            "/api/auth/github/callback", params={"code": "test_code", "state": "test_state"}
         )
 
         assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
@@ -361,18 +378,19 @@ async def test_github_callback_success(async_client, async_db_session):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_get_current_user_info(async_client, test_user):
     """Test getting current user information."""
     # Login first
     login_response = await async_client.post(
-        "/auth/login", data={"username": "testuser", "password": "testpassword123"}
+        "/api/auth/login", data={"username": "testuser", "password": "testpassword123"}
     )
 
     access_token = login_response.json()["access_token"]
 
     # Get user info
     response = await async_client.get(
-        "/auth/me", headers={"Authorization": f"Bearer {access_token}"}
+        "/api/auth/me", headers={"Authorization": f"Bearer {access_token}"}
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -385,9 +403,10 @@ async def test_get_current_user_info(async_client, test_user):
     assert data["is_active"] is True
 
 
+@pytest.mark.asyncio
 async def test_get_user_info_without_auth(async_client):
     """Test getting user info without authentication."""
-    response = await async_client.get("/auth/me")
+    response = await async_client.get("/api/auth/me")
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -397,18 +416,19 @@ async def test_get_user_info_without_auth(async_client):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_get_rate_limit_status_free_tier(async_client, test_user):
     """Test getting rate limit status for free tier user."""
     # Login first
     login_response = await async_client.post(
-        "/auth/login", data={"username": "testuser", "password": "testpassword123"}
+        "/api/auth/login", data={"username": "testuser", "password": "testpassword123"}
     )
 
     access_token = login_response.json()["access_token"]
 
     # Get rate limit status
     response = await async_client.get(
-        "/auth/rate-limit", headers={"Authorization": f"Bearer {access_token}"}
+        "/api/auth/rate-limit", headers={"Authorization": f"Bearer {access_token}"}
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -421,18 +441,19 @@ async def test_get_rate_limit_status_free_tier(async_client, test_user):
     assert data["limit"] > 0  # Free tier has limits
 
 
+@pytest.mark.asyncio
 async def test_get_rate_limit_status_premium_tier(async_client, premium_user):
     """Test getting rate limit status for premium tier user."""
     # Login first
     login_response = await async_client.post(
-        "/auth/login", data={"username": "premiumuser", "password": "premiumpass123"}
+        "/api/auth/login", data={"username": "premiumuser", "password": "premiumpass123"}
     )
 
     access_token = login_response.json()["access_token"]
 
     # Get rate limit status
     response = await async_client.get(
-        "/auth/rate-limit", headers={"Authorization": f"Bearer {access_token}"}
+        "/api/auth/rate-limit", headers={"Authorization": f"Bearer {access_token}"}
     )
 
     assert response.status_code == status.HTTP_200_OK
@@ -442,9 +463,10 @@ async def test_get_rate_limit_status_premium_tier(async_client, premium_user):
     assert data["limit"] > 0  # Premium tier has higher limits
 
 
+@pytest.mark.asyncio
 async def test_get_rate_limit_without_auth(async_client):
     """Test getting rate limit status without authentication."""
-    response = await async_client.get("/auth/rate-limit")
+    response = await async_client.get("/api/auth/rate-limit")
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -454,6 +476,7 @@ async def test_get_rate_limit_without_auth(async_client):
 # ============================================================================
 
 
+@pytest.mark.asyncio
 async def test_oauth_account_linking_to_existing_user(async_client, test_user, async_db_session):
     """Test linking OAuth account to existing user with same email."""
     mock_token_data = {"access_token": "mock_token"}
@@ -476,7 +499,7 @@ async def test_oauth_account_linking_to_existing_user(async_client, test_user, a
         mock_provider.return_value = mock_provider_instance
 
         response = await async_client.get(
-            "/auth/google/callback", params={"code": "test_code", "state": "test_state"}
+            "/api/auth/google/callback", params={"code": "test_code", "state": "test_state"}
         )
 
         assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
@@ -491,3 +514,4 @@ async def test_oauth_account_linking_to_existing_user(async_client, test_user, a
 
         assert oauth_account is not None
         assert oauth_account.user_id == test_user.id
+

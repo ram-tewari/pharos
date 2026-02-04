@@ -10,6 +10,7 @@ Requirements: 3.5, 3.7, 6.5, 9.1, 9.3, 9.4, 9.6
 import pytest
 import json
 import sys
+import os
 import time
 from datetime import datetime, timedelta
 from hypothesis import given, strategies as st, settings
@@ -21,6 +22,16 @@ sys.modules['upstash_redis'] = MagicMock()
 
 # Import worker components
 from worker import EdgeWorker
+
+
+@pytest.fixture(autouse=True)
+def mock_redis_env_vars():
+    """Mock Redis environment variables for all tests."""
+    with patch.dict(os.environ, {
+        'UPSTASH_REDIS_REST_URL': 'https://test-redis.upstash.io',
+        'UPSTASH_REDIS_REST_TOKEN': 'test-token'
+    }):
+        yield
 
 
 # Hypothesis strategies for generating test data

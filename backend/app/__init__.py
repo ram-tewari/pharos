@@ -81,8 +81,6 @@ def register_all_modules(app: FastAPI) -> None:
             ["graph_router", "citations_router", "discovery_router"],
         ),
         ("auth", "app.modules.auth", ["router"]),
-        ("planning", "app.modules.planning", ["router"]),
-        ("mcp", "app.modules.mcp", ["router"]),
     ]
     
     # Modules that require torch (only load in EDGE mode)
@@ -98,11 +96,17 @@ def register_all_modules(app: FastAPI) -> None:
     # Build final module list based on deployment mode
     modules = base_modules.copy()
     
-    if deployment_mode == "EDGE":
-        # Edge mode: Load all modules including ML-heavy ones
+    # Check if in test mode
+    is_test_mode = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+    
+    if deployment_mode == "EDGE" or is_test_mode:
+        # Edge mode or test mode: Load all modules including ML-heavy ones
         modules.extend(edge_only_modules)
         modules.extend(redis_modules)
-        logger.info("Edge mode: Loading all modules including ML-heavy modules")
+        if is_test_mode:
+            logger.info("Test mode: Loading all modules including ML-heavy modules")
+        else:
+            logger.info("Edge mode: Loading all modules including ML-heavy modules")
     else:
         # Cloud mode: Skip torch-dependent modules, add ingestion router
         logger.info("Cloud mode: Skipping torch-dependent modules (recommendations)")
@@ -201,31 +205,38 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting Neo Alexandria 2.0...")
+    
+    # Skip heavy initialization in test mode
+    import os
+    is_test_mode = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+    
+    if is_test_mode:
+        logger.info("Test mode detected - skipping heavy initialization (embedding warmup, Redis)")
+    else:
+        # Warmup embedding model to avoid cold start latency
+        try:
+            from .shared.embeddings import EmbeddingService
+            
+            embedding_service = EmbeddingService()
+            if embedding_service.warmup():
+                logger.info("✓ Embedding model warmed up successfully")
+            else:
+                logger.warning("⚠ Embedding model warmup failed - first encoding may be slow")
+        except Exception as e:
+            logger.warning(f"Embedding model warmup failed: {e} - first encoding may be slow")
 
-    # Warmup embedding model to avoid cold start latency
-    try:
-        from .shared.embeddings import EmbeddingService
-        
-        embedding_service = EmbeddingService()
-        if embedding_service.warmup():
-            logger.info("✓ Embedding model warmed up successfully")
-        else:
-            logger.warning("⚠ Embedding model warmup failed - first encoding may be slow")
-    except Exception as e:
-        logger.warning(f"Embedding model warmup failed: {e} - first encoding may be slow")
+        # Initialize Redis cache connection
+        try:
+            from .shared.cache import cache
 
-    # Initialize Redis cache connection
-    try:
-        from .shared.cache import cache
-
-        if cache.ping():
-            logger.info("Redis cache connection established successfully")
-        else:
-            logger.warning("Redis cache connection failed - caching will be disabled")
-    except Exception as e:
-        logger.warning(
-            f"Redis cache initialization failed: {e} - caching will be disabled"
-        )
+            if cache.ping():
+                logger.info("Redis cache connection established successfully")
+            else:
+                logger.warning("Redis cache connection failed - caching will be disabled")
+        except Exception as e:
+            logger.warning(
+                f"Redis cache initialization failed: {e} - caching will be disabled"
+            )
 
     # Register event hooks for automatic data consistency
     try:
@@ -263,11 +274,16 @@ def create_app() -> FastAPI:
     # Skip database initialization during tests - test fixtures handle it
     import os
 
-    if os.getenv("TESTING") != "true":
+    # In test mode, create a minimal app without lifespan to avoid blocking
+    is_test_mode = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+    
+    if not is_test_mode:
         settings = get_settings()
         init_database(settings.get_database_url(), settings.ENV)
-
-    app = FastAPI(title="Neo Alexandria 2.0", version="0.4.0", lifespan=lifespan)
+        app = FastAPI(title="Neo Alexandria 2.0", version="0.4.0", lifespan=lifespan)
+    else:
+        # Test mode: create app without lifespan to avoid blocking
+        app = FastAPI(title="Neo Alexandria 2.0", version="0.4.0")
 
     # Add CORS middleware to allow frontend connections
     app.add_middleware(
@@ -524,7 +540,8 @@ def create_app() -> FastAPI:
     register_all_modules(app)
 
     # Set up performance monitoring
-    setup_monitoring(app)
+    if not is_test_mode:
+        setup_monitoring(app)
 
     logger.info("Application initialization complete")
 

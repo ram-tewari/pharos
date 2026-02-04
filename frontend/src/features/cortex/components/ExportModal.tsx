@@ -123,51 +123,55 @@ export const ExportModal = memo<ExportModalProps>(({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200" aria-describedby="export-description">
         <DialogHeader>
-          <DialogTitle>Export Graph</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-base md:text-lg">Export Graph</DialogTitle>
+          <DialogDescription id="export-description" className="text-sm">
             Choose a format to export the current graph view
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-4 md:space-y-6 py-3 md:py-4">
           {/* Format Selection */}
-          <RadioGroup value={format} onValueChange={(v) => setFormat(v as ExportFormat)}>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer">
-                <RadioGroupItem value="png" id="png" />
-                <Label htmlFor="png" className="flex items-center gap-3 cursor-pointer flex-1">
-                  <FileImage className="w-5 h-5 text-blue-500" />
+          <RadioGroup 
+            value={format} 
+            onValueChange={(v) => setFormat(v as ExportFormat)}
+            aria-label="Export format selection"
+          >
+            <div className="space-y-2 md:space-y-3" role="list">
+              <div className="flex items-center space-x-2 md:space-x-3 p-2 md:p-3 rounded-lg border hover:bg-accent cursor-pointer min-h-[60px] transition-all duration-200 hover:shadow-md hover:border-primary" role="listitem">
+                <RadioGroupItem value="png" id="png" aria-label="PNG Image format" className="min-h-[24px] min-w-[24px]" />
+                <Label htmlFor="png" className="flex items-center gap-2 md:gap-3 cursor-pointer flex-1">
+                  <FileImage className="w-4 h-4 md:w-5 md:h-5 text-blue-500 shrink-0" aria-hidden="true" />
                   <div>
-                    <div className="font-medium">PNG Image</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="font-medium text-sm md:text-base">PNG Image</div>
+                    <div className="text-xs md:text-sm text-muted-foreground">
                       High-quality raster image (2x resolution)
                     </div>
                   </div>
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer">
-                <RadioGroupItem value="svg" id="svg" />
-                <Label htmlFor="svg" className="flex items-center gap-3 cursor-pointer flex-1">
-                  <FileCode className="w-5 h-5 text-green-500" />
+              <div className="flex items-center space-x-2 md:space-x-3 p-2 md:p-3 rounded-lg border hover:bg-accent cursor-pointer min-h-[60px] transition-all duration-200 hover:shadow-md hover:border-primary" role="listitem">
+                <RadioGroupItem value="svg" id="svg" aria-label="SVG Vector format" className="min-h-[24px] min-w-[24px]" />
+                <Label htmlFor="svg" className="flex items-center gap-2 md:gap-3 cursor-pointer flex-1">
+                  <FileCode className="w-4 h-4 md:w-5 md:h-5 text-green-500 shrink-0" aria-hidden="true" />
                   <div>
-                    <div className="font-medium">SVG Vector</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="font-medium text-sm md:text-base">SVG Vector</div>
+                    <div className="text-xs md:text-sm text-muted-foreground">
                       Scalable vector graphic
                     </div>
                   </div>
                 </Label>
               </div>
 
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent cursor-pointer">
-                <RadioGroupItem value="json" id="json" />
-                <Label htmlFor="json" className="flex items-center gap-3 cursor-pointer flex-1">
-                  <FileJson className="w-5 h-5 text-purple-500" />
+              <div className="flex items-center space-x-2 md:space-x-3 p-2 md:p-3 rounded-lg border hover:bg-accent cursor-pointer min-h-[60px] transition-all duration-200 hover:shadow-md hover:border-primary" role="listitem">
+                <RadioGroupItem value="json" id="json" aria-label="JSON Data format" className="min-h-[24px] min-w-[24px]" />
+                <Label htmlFor="json" className="flex items-center gap-2 md:gap-3 cursor-pointer flex-1">
+                  <FileJson className="w-4 h-4 md:w-5 md:h-5 text-purple-500 shrink-0" aria-hidden="true" />
                   <div>
-                    <div className="font-medium">JSON Data</div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="font-medium text-sm md:text-base">JSON Data</div>
+                    <div className="text-xs md:text-sm text-muted-foreground">
                       Raw graph data structure
                     </div>
                   </div>
@@ -178,9 +182,13 @@ export const ExportModal = memo<ExportModalProps>(({
 
           {/* Progress Bar */}
           {isExporting && (
-            <div className="space-y-2">
-              <Progress value={progress} className="w-full" />
-              <p className="text-sm text-center text-muted-foreground">
+            <div className="space-y-2 animate-in fade-in duration-200" role="status" aria-live="polite">
+              <Progress 
+                value={progress} 
+                className="w-full h-2 bg-gradient-to-r from-primary/20 to-primary/40"
+                aria-label={`Export progress: ${progress} percent`}
+              />
+              <p className="text-xs md:text-sm text-center text-muted-foreground">
                 Exporting... {progress}%
               </p>
             </div>
@@ -188,19 +196,23 @@ export const ExportModal = memo<ExportModalProps>(({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2" role="group" aria-label="Export actions">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isExporting}
+            aria-label="Cancel export and close dialog"
+            className="w-full sm:w-auto min-h-[44px] transition-all duration-200 hover:scale-[1.02] active:scale-95"
           >
             Cancel
           </Button>
           <Button
             onClick={handleExport}
             disabled={isExporting}
+            aria-label={`Export graph as ${format.toUpperCase()}`}
+            className="w-full sm:w-auto min-h-[44px] transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-95"
           >
-            <Download className="w-4 h-4 mr-2" />
+            <Download className="w-4 h-4 mr-2" aria-hidden="true" />
             Export
           </Button>
         </div>

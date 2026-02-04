@@ -34,7 +34,7 @@ def test_review_queue_filtering(
     high_quality = create_test_resource(title="High Quality", quality_score=0.9)
 
     # Query review queue with threshold 0.5
-    response = client.get("/curation/review-queue?threshold=0.5&limit=10")
+    response = client.get("/api/curation/review-queue?threshold=0.5&limit=10")
 
     assert response.status_code == 200
     result = response.json()
@@ -72,7 +72,7 @@ def test_quality_analysis_endpoint(client: TestClient, create_test_resource):
     )
 
     # Get quality analysis
-    response = client.get(f"/curation/quality-analysis/{resource.id}")
+    response = client.get(f"/api/curation/quality-analysis/{resource.id}")
 
     assert response.status_code == 200
     analysis = response.json()
@@ -128,7 +128,7 @@ def test_bulk_quality_check(
     # Perform bulk quality check
     bulk_request = {"resource_ids": [str(resource1.id), str(resource2.id)]}
 
-    response = client.post("/curation/bulk-quality-check", json=bulk_request)
+    response = client.post("/api/curation/bulk-quality-check", json=bulk_request)
 
     assert response.status_code == 200
     result = response.json()
@@ -163,7 +163,7 @@ def test_empty_batch_operation(client: TestClient):
         "updates": {"description": "Should not be applied"},
     }
 
-    response = client.post("/curation/batch-update", json=batch_request)
+    response = client.post("/api/curation/batch-update", json=batch_request)
 
     # Verify validation error
     assert response.status_code == 422, f"Expected 422, got {response.status_code}"
@@ -188,7 +188,7 @@ def test_review_queue_pagination(client: TestClient, create_test_resource):
         )
 
     # Get first page (5 items)
-    response1 = client.get("/curation/review-queue?threshold=0.5&limit=5&offset=0")
+    response1 = client.get("/api/curation/review-queue?threshold=0.5&limit=5&offset=0")
     assert response1.status_code == 200
     page1 = response1.json()
 
@@ -196,7 +196,7 @@ def test_review_queue_pagination(client: TestClient, create_test_resource):
     assert len(page1["items"]) == 5
 
     # Get second page (5 items)
-    response2 = client.get("/curation/review-queue?threshold=0.5&limit=5&offset=5")
+    response2 = client.get("/api/curation/review-queue?threshold=0.5&limit=5&offset=5")
     assert response2.status_code == 200
     page2 = response2.json()
 
@@ -226,7 +226,7 @@ def test_low_quality_endpoint(client: TestClient, create_test_resource):
     high = create_test_resource(title="High", quality_score=0.8)
 
     # Query low-quality resources
-    response = client.get("/curation/low-quality?threshold=0.5")
+    response = client.get("/api/curation/low-quality?threshold=0.5")
 
     assert response.status_code == 200
     result = response.json()

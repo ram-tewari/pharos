@@ -205,7 +205,7 @@ def test_get_recommendations_simple_success(client, db_session, test_user):
     """
     # test_user is already created by fixture
 
-    response = client.get("/recommendations/simple?limit=10")
+    response = client.get("/api/recommendations/simple?limit=10")
 
     assert response.status_code == 200
 
@@ -242,7 +242,7 @@ def test_track_interaction_success(client, db_session, test_user):
         "scroll_depth": 0.75,
     }
 
-    response = client.post("/recommendations/interactions", json=payload)
+    response = client.post("/api/recommendations/interactions", json=payload)
 
     assert response.status_code == 201
 
@@ -280,7 +280,7 @@ def test_track_interaction_with_rating(client, db_session, test_user):
     # Track interaction with rating
     payload = {"resource_id": str(res_id), "interaction_type": "rating", "rating": 5}
 
-    response = client.post("/recommendations/interactions", json=payload)
+    response = client.post("/api/recommendations/interactions", json=payload)
 
     assert response.status_code == 201
 
@@ -306,7 +306,7 @@ def test_track_interaction_invalid_type(client, db_session, test_user):
     # Invalid interaction type
     payload = {"resource_id": str(res_id), "interaction_type": "invalid_type"}
 
-    response = client.post("/recommendations/interactions", json=payload)
+    response = client.post("/api/recommendations/interactions", json=payload)
 
     assert response.status_code == 422
 
@@ -324,7 +324,7 @@ def test_track_interaction_invalid_resource(client, db_session, test_user):
     # Invalid resource ID format
     payload = {"resource_id": "not-a-uuid", "interaction_type": "view"}
 
-    response = client.post("/recommendations/interactions", json=payload)
+    response = client.post("/api/recommendations/interactions", json=payload)
 
     # Should return error (400 or 500)
     assert response.status_code in [400, 500]
@@ -346,7 +346,7 @@ def test_get_profile_success(client, db_session, test_user):
     """
     # test_user is already created by fixture
 
-    response = client.get("/recommendations/profile")
+    response = client.get("/api/recommendations/profile")
 
     assert response.status_code == 200
 
@@ -381,7 +381,7 @@ def test_update_profile_success(client, db_session, test_user):
         "recency_bias": 0.4,
     }
 
-    response = client.put("/recommendations/profile", json=payload)
+    response = client.put("/api/recommendations/profile", json=payload)
 
     assert response.status_code == 200
 
@@ -417,7 +417,7 @@ def test_update_profile_with_research_domains(client, db_session, test_user):
         "active_domain": "machine_learning",
     }
 
-    response = client.put("/recommendations/profile", json=payload)
+    response = client.put("/api/recommendations/profile", json=payload)
 
     assert response.status_code == 200
 
@@ -439,7 +439,7 @@ def test_update_profile_invalid_values(client, db_session, test_user):
     # Invalid diversity preference (> 1.0)
     payload = {"diversity_preference": 1.5}
 
-    response = client.put("/recommendations/profile", json=payload)
+    response = client.put("/api/recommendations/profile", json=payload)
 
     assert response.status_code == 422
 
@@ -473,7 +473,7 @@ def test_submit_feedback_success(client, db_session, test_user):
         "feedback_notes": "Very helpful resource",
     }
 
-    response = client.post("/recommendations/feedback", json=payload)
+    response = client.post("/api/recommendations/feedback", json=payload)
 
     if response.status_code != 201:
         print(f"Error response: {response.json()}")
@@ -515,7 +515,7 @@ def test_submit_feedback_minimal(client, db_session, test_user):
     # Minimal feedback
     payload = {"resource_id": str(res_id), "was_clicked": False}
 
-    response = client.post("/recommendations/feedback", json=payload)
+    response = client.post("/api/recommendations/feedback", json=payload)
 
     assert response.status_code == 201
 
@@ -534,7 +534,7 @@ def test_get_metrics_success(client, db_session):
     - Response has metrics data
     - Metrics structure is correct
     """
-    response = client.get("/recommendations/metrics")
+    response = client.get("/api/recommendations/metrics")
 
     assert response.status_code == 200
 
@@ -558,7 +558,7 @@ def test_refresh_recommendations_success(client, db_session, test_user):
     """
     # test_user is already created by fixture
 
-    response = client.post("/recommendations/refresh")
+    response = client.post("/api/recommendations/refresh")
 
     assert response.status_code == 202
 
@@ -581,7 +581,7 @@ def test_health_check_success(client, db_session):
     - Health status is reported
     - Module information is included
     """
-    response = client.get("/recommendations/health")
+    response = client.get("/api/recommendations/health")
 
     assert response.status_code == 200
 
@@ -605,7 +605,7 @@ def test_health_check_includes_service_status(client, db_session):
     - User profile service status is checked
     - Database connectivity is verified
     """
-    response = client.get("/recommendations/health")
+    response = client.get("/api/recommendations/health")
 
     assert response.status_code == 200
 

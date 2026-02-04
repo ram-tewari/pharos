@@ -46,7 +46,7 @@ def test_batch_update_resources(
     }
 
     # Execute batch update
-    response = client.post("/curation/batch-update", json=batch_request)
+    response = client.post("/api/curation/batch-update", json=batch_request)
 
     # Verify response
     assert response.status_code == 200, (
@@ -114,7 +114,7 @@ def test_batch_update_with_failures(
     }
 
     # Execute batch update
-    response = client.post("/curation/batch-update", json=batch_request)
+    response = client.post("/api/curation/batch-update", json=batch_request)
 
     # Verify response
     assert response.status_code == 200
@@ -150,7 +150,7 @@ def test_batch_update_empty_updates(client: TestClient, create_test_resource):
     batch_request = {"resource_ids": [str(resource.id)], "updates": {}}
 
     # Execute batch update
-    response = client.post("/curation/batch-update", json=batch_request)
+    response = client.post("/api/curation/batch-update", json=batch_request)
 
     # Verify error response
     assert response.status_code == 400, f"Expected 400, got {response.status_code}"
@@ -181,7 +181,7 @@ def test_batch_update_atomic_transaction(
         "updates": {"quality_score": 0.9, "description": "Atomically updated"},
     }
 
-    response = client.post("/curation/batch-update", json=batch_request)
+    response = client.post("/api/curation/batch-update", json=batch_request)
 
     assert response.status_code == 200
     result = response.json()

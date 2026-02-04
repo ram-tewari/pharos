@@ -8,7 +8,7 @@ from datetime import datetime
 from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, String
 from sqlalchemy.orm import relationship
 
-from backend.app.shared.base_model import Base
+from ...shared.base_model import Base
 
 
 class MCPSession(Base):

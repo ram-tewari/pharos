@@ -249,7 +249,7 @@ async def test_code_pipeline_end_to_end(
 
         # Step 1: Start repository ingestion
         response = await async_client.post(
-            "/resources/ingest-repo", json={"path": str(repo_path)}
+            "/api/resources/ingest-repo", json={"path": str(repo_path)}
         )
 
         assert response.status_code == 200, (
@@ -268,7 +268,7 @@ async def test_code_pipeline_end_to_end(
 
         while attempt < max_attempts:
             response = await async_client.get(
-                f"/resources/ingest-repo/{task_id}/status"
+                f"/api/resources/ingest-repo/{task_id}/status"
             )
             assert response.status_code == 200
 
@@ -455,14 +455,14 @@ async def test_code_pipeline_with_errors(
     """
     # Test with non-existent path
     response = await async_client.post(
-        "/resources/ingest-repo", json={"path": "/nonexistent/path"}
+        "/api/resources/ingest-repo", json={"path": "/nonexistent/path"}
     )
 
     assert response.status_code == 400 or response.status_code == 404
     print("✓ Correctly rejected non-existent path")
 
     # Test with invalid task ID
-    response = await async_client.get("/resources/ingest-repo/invalid-task-id/status")
+    response = await async_client.get("/api/resources/ingest-repo/invalid-task-id/status")
     assert response.status_code == 404
     print("✓ Correctly handled invalid task ID")
 
@@ -483,7 +483,7 @@ async def test_code_pipeline_performance(
 
         # Start ingestion
         response = await async_client.post(
-            "/resources/ingest-repo", json={"path": str(repo_path)}
+            "/api/resources/ingest-repo", json={"path": str(repo_path)}
         )
         assert response.status_code == 200
         task_id = response.json()["task_id"]
@@ -494,7 +494,7 @@ async def test_code_pipeline_performance(
 
         while time.time() - start_time < max_wait:
             response = await async_client.get(
-                f"/resources/ingest-repo/{task_id}/status"
+                f"/api/resources/ingest-repo/{task_id}/status"
             )
             if response.json().get("state") == "COMPLETED":
                 completed = True

@@ -78,7 +78,7 @@ class TestAnnotationWorkflowE2E:
 
         for ann_data in annotation_data_list:
             response = client.post(
-                f"/resources/{str(resource_id)}/annotations", json=ann_data
+                f"/api/resources/{str(resource_id)}/annotations", json=ann_data
             )
             assert response.status_code in [200, 201], (
                 f"Annotation creation failed: {response.status_code} - {response.text}"
@@ -92,7 +92,7 @@ class TestAnnotationWorkflowE2E:
 
         # Step 3: Test fulltext search
         response = client.get(
-            "/annotations/search/fulltext", params={"query": "learning"}
+            "/api/annotations/search/fulltext", params={"query": "learning"}
         )
         assert response.status_code == 200
         search_results = response.json()
@@ -103,7 +103,7 @@ class TestAnnotationWorkflowE2E:
 
         # Step 4: Test semantic search (if embeddings are available)
         response = client.get(
-            "/annotations/search/semantic",
+            "/api/annotations/search/semantic",
             params={"query": "what is machine learning", "limit": 5},
         )
         assert response.status_code == 200
@@ -118,14 +118,14 @@ class TestAnnotationWorkflowE2E:
             print("✓ Step 4: Semantic search completed (no embeddings yet)")
 
         # Step 5: Test tag-based search
-        response = client.get("/annotations/search/tags", params={"tags": "ml"})
+        response = client.get("/api/annotations/search/tags", params={"tags": "ml"})
         assert response.status_code == 200
         tag_results = response.json()
         assert len(tag_results) == 3  # All three annotations have "ml" tag
         print(f"✓ Step 5: Tag search found {len(tag_results)} annotations")
 
         # Step 6: Export to Markdown
-        response = client.get("/annotations/export/markdown")
+        response = client.get("/api/annotations/export/markdown")
         assert response.status_code == 200
         markdown_export = response.text
         assert "Machine Learning Fundamentals" in markdown_export
@@ -134,7 +134,7 @@ class TestAnnotationWorkflowE2E:
         print(f"✓ Step 6: Exported {len(markdown_export)} characters to Markdown")
 
         # Step 7: Export to JSON
-        response = client.get("/annotations/export/json")
+        response = client.get("/api/annotations/export/json")
         assert response.status_code == 200
         json_export = response.json()
         assert isinstance(json_export, list)
@@ -148,7 +148,7 @@ class TestAnnotationWorkflowE2E:
         print(f"✓ Step 7: Exported {len(json_export)} annotations to JSON")
 
         # Step 8: Verify annotation retrieval by resource
-        response = client.get(f"/resources/{resource_id}/annotations")
+        response = client.get(f"/api/resources/{resource_id}/annotations")
         assert response.status_code == 200
         resource_annotations = response.json()
         assert len(resource_annotations) == 3
@@ -162,7 +162,7 @@ class TestAnnotationWorkflowE2E:
             "note": "Updated: Key definition of machine learning",
             "tags": ["definition", "ml", "updated"],
         }
-        response = client.put(f"/annotations/{annotation_id}", json=update_data)
+        response = client.put(f"/api/annotations/{annotation_id}", json=update_data)
         assert response.status_code == 200
         updated = response.json()
         assert updated["note"] == update_data["note"]
@@ -171,11 +171,11 @@ class TestAnnotationWorkflowE2E:
 
         # Step 10: Delete an annotation
         annotation_to_delete = annotations[2]["id"]
-        response = client.delete(f"/annotations/{annotation_to_delete}")
+        response = client.delete(f"/api/annotations/{annotation_to_delete}")
         assert response.status_code in [200, 204]
 
         # Verify deletion
-        response = client.get(f"/annotations/{annotation_to_delete}")
+        response = client.get(f"/api/annotations/{annotation_to_delete}")
         assert response.status_code == 404
         print(f"✓ Step 10: Deleted annotation {annotation_to_delete}")
 

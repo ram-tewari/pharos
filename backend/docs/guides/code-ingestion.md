@@ -2,7 +2,7 @@
 
 ## Overview
 
-Neo Alexandria 2.0 includes code intelligence capabilities that allow you to ingest and analyze code repositories. This guide explains how to use the repository ingestion features to analyze local directories and remote Git repositories.
+Pharos includes code intelligence capabilities that allow you to ingest and analyze code repositories. This guide explains how to use the repository ingestion features to analyze local directories and remote Git repositories.
 
 ## Features
 

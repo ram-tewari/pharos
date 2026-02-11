@@ -1,6 +1,6 @@
 # Developer Guides
 
-Practical guides for developing with Neo Alexandria 2.0.
+Practical guides for developing with Pharos.
 
 ## Quick Links
 

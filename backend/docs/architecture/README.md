@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-System architecture and design documentation for Neo Alexandria 2.0.
+System architecture and design documentation for Pharos.
 
 ## Quick Links
 

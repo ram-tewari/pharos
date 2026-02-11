@@ -1,5 +1,5 @@
 """
-Graph Embeddings Service for Phase 16.7 - Task 11
+Graph Embeddings Service
 
 Implements Node2Vec and DeepWalk embeddings for citation graph analysis.
 Provides embedding generation, storage, retrieval, and similarity search.

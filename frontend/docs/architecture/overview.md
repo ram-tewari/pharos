@@ -1,6 +1,6 @@
 # Architecture Overview
 
-High-level system architecture for Neo Alexandria 2.0 Frontend.
+High-level system architecture for Pharos Frontend.
 
 > **Last Updated**: Phase 1 Complete - Core Workbench & Navigation
 
@@ -22,7 +22,7 @@ High-level system architecture for Neo Alexandria 2.0 Frontend.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    NEO ALEXANDRIA 2.0 - FRONTEND ARCHITECTURE               │
+│                    Pharos - FRONTEND ARCHITECTURE               │
 │                         "Second Brain" for Code                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │

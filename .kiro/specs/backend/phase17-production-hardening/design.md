@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 17 transforms Neo Alexandria 2.0 from a development prototype into a production-ready application by implementing critical infrastructure improvements. This phase introduces PostgreSQL database support, API key authentication, real-time task tracking for frontend integration, and optimized Celery worker initialization.
+Phase 17 transforms Pharos from a development prototype into a production-ready application by implementing critical infrastructure improvements. This phase introduces PostgreSQL database support, API key authentication, real-time task tracking for frontend integration, and optimized Celery worker initialization.
 
 The design maintains strict adherence to the Vertical Slice Architecture with zero circular dependencies, ensuring all new components reside in the shared kernel layer and are accessible to all modules without violating isolation principles.
 
@@ -21,7 +21,7 @@ The design maintains strict adherence to the Vertical Slice Architecture with ze
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Neo Alexandria 2.0                          │
+│                     Pharos                          │
 │                                                                 │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐    │
 │  │   Frontend   │───▶│  API Gateway │───▶│   Modules    │    │

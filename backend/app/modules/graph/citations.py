@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Citation Service (Phase 6)
+Neo Alexandria 2.0 - Citation Service
 
 This module handles citation extraction, resolution, and graph operations for Neo Alexandria 2.0.
 It extracts citations from resource content, resolves internal citations, and computes importance scores.

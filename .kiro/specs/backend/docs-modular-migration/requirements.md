@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification covers the migration of Neo Alexandria 2.0's monolithic documentation files into a modular, topic-focused structure. The goal is to improve documentation discoverability, reduce context loading for AI agents, and enable incremental updates without affecting unrelated content.
+This specification covers the migration of Pharos's monolithic documentation files into a modular, topic-focused structure. The goal is to improve documentation discoverability, reduce context loading for AI agents, and enable incremental updates without affecting unrelated content.
 
 ## Glossary
 

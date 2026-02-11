@@ -88,12 +88,12 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
 
-    # Vector embedding configuration for Phase 4
+    # Vector embedding configuration
     EMBEDDING_MODEL_NAME: str = "nomic-ai/nomic-embed-text-v1"
     DEFAULT_HYBRID_SEARCH_WEIGHT: float = 0.5  # 0.0=keyword only, 1.0=semantic only
     EMBEDDING_CACHE_SIZE: int = 1000  # for model caching if needed
 
-    # Graph configuration for Phase 5 - Hybrid Knowledge Graph
+    # Graph configuration - Hybrid Knowledge Graph
     DEFAULT_GRAPH_NEIGHBORS: int = 7
     GRAPH_OVERVIEW_MAX_EDGES: int = 50
     GRAPH_WEIGHT_VECTOR: float = 0.6
@@ -101,14 +101,14 @@ class Settings(BaseSettings):
     GRAPH_WEIGHT_CLASSIFICATION: float = 0.1
     GRAPH_VECTOR_MIN_SIM_THRESHOLD: float = 0.85  # for overview candidate pruning
 
-    # Phase 5.5 - Personalized Recommendation Engine
+    # Personalized Recommendation Engine
     RECOMMENDATION_PROFILE_SIZE: int = 50
     RECOMMENDATION_KEYWORD_COUNT: int = 5
     RECOMMENDATION_CANDIDATES_PER_KEYWORD: int = 10
     SEARCH_PROVIDER: str = "ddgs"  # currently supports only ddgs
     SEARCH_TIMEOUT: int = 10
 
-    # Phase 17.5 - Advanced RAG Architecture
+    # Advanced RAG Architecture
     # Chunking Configuration
     CHUNK_ON_RESOURCE_CREATE: bool = True  # Enable automatic chunking during ingestion
     CHUNKING_STRATEGY: str = "semantic"  # "semantic" or "fixed"
@@ -348,7 +348,7 @@ def get_settings() -> Settings:
             f"got {settings.DEFAULT_HYBRID_SEARCH_WEIGHT}. Expected type: float (0.0-1.0)"
         )
 
-    # Validate Advanced RAG configuration (Phase 17.5)
+    # Validate Advanced RAG configuration
     if settings.CHUNKING_STRATEGY not in ("semantic", "fixed"):
         raise ValueError(
             f"Configuration validation failed: CHUNKING_STRATEGY must be 'semantic' or 'fixed', "
@@ -408,15 +408,15 @@ def get_settings() -> Settings:
             f"got {settings.GRAPHRAG_MAX_HOPS}. Expected type: int (> 0)"
         )
 
-    # Validate Phase 19 - Hybrid Edge-Cloud Orchestration configuration
+    # Validate Hybrid Edge-Cloud Orchestration configuration
     if settings.MODE not in ("CLOUD", "EDGE"):
         raise ValueError(
             f"Configuration validation failed: MODE must be 'CLOUD' or 'EDGE', "
             f"got '{settings.MODE}'. Expected type: Literal['CLOUD', 'EDGE']"
         )
 
-    # Only validate Phase 19 requirements if explicitly enabled
-    # This allows existing tests to run without Phase 19 configuration
+    # Only validate edge-cloud requirements if explicitly enabled
+    # This allows existing tests to run without edge-cloud configuration
     phase19_enabled = os.getenv("PHASE19_ENABLED", "").lower() in ("true", "1", "yes")
     
     if phase19_enabled:

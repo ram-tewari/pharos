@@ -1,6 +1,6 @@
 # Testing Guide
 
-Testing strategies and practices for Neo Alexandria 2.0.
+Testing strategies and practices for Pharos.
 
 ## Running Tests
 

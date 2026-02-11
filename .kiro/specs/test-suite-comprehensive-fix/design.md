@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design addresses the systematic resolution of 488 test failures (386 failures + 102 errors) in the Neo Alexandria 2.0 test suite. The failures are categorized into 10 root causes, each requiring specific fixes to models, services, database infrastructure, and test code. The design prioritizes fixes by impact (P0-P3) and ensures backward compatibility where possible.
+This design addresses the systematic resolution of 488 test failures (386 failures + 102 errors) in the Pharos test suite. The failures are categorized into 10 root causes, each requiring specific fixes to models, services, database infrastructure, and test code. The design prioritizes fixes by impact (P0-P3) and ensures backward compatibility where possible.
 
 ### Design Principles
 

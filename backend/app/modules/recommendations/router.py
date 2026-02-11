@@ -9,8 +9,8 @@ Provides API endpoints for:
 - Performance metrics
 
 This module merges endpoints from:
-- routers/recommendation.py (Phase 5.5 basic recommendations)
-- routers/recommendations.py (Phase 11 hybrid recommendations)
+- routers/recommendation.py (Basic recommendations)
+- routers/recommendations.py (Hybrid recommendations)
 """
 
 from datetime import datetime
@@ -246,7 +246,7 @@ async def get_recommendations_hybrid(
     user_id: UUID = Depends(_get_current_user_id),
 ):
     """
-    Get personalized recommendations for the authenticated user (Phase 11 hybrid).
+    Get personalized recommendations for the authenticated user (Hybrid).
 
     Args:
         limit: Number of recommendations (1-100, default 20)
@@ -339,7 +339,7 @@ def get_recommendations_simple(
     limit: int = Query(10, ge=1, le=100), db: Session = Depends(get_sync_db)
 ):
     """
-    Get simple recommendations (Phase 5.5 basic endpoint).
+    Get simple recommendations (Basic endpoint).
 
     Args:
         limit: Number of recommendations (1-100, default 10)

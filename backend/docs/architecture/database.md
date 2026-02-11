@@ -1,6 +1,6 @@
 # Database Architecture
 
-Database schema, models, and migration strategies for Neo Alexandria 2.0.
+Database schema, models, and migration strategies for Pharos.
 
 ## Database Support
 

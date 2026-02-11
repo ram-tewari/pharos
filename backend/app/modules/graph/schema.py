@@ -508,7 +508,7 @@ class ImportanceComputationResponse(BaseModel):
 
 
 # ============================================================================
-# ADVANCED RAG SCHEMAS (Phase 17.5)
+# ADVANCED RAG SCHEMAS
 # ============================================================================
 
 
@@ -557,7 +557,7 @@ class GraphRelationshipCreate(BaseModel):
     Relationships represent semantic triples (Subject -> Predicate -> Object)
     connecting entities. Supports both academic relationships (CONTRADICTS,
     SUPPORTS, EXTENDS, CITES) and code-specific relationships (CALLS, IMPORTS,
-    DEFINES) for Phase 18 structural dependency tracking.
+    DEFINES) for structural dependency tracking.
     """
 
     source_entity_id: str = Field(..., description="Source entity UUID")
@@ -622,7 +622,7 @@ class GraphRelationshipResponse(BaseModel):
 
 
 # ============================================================================
-# HOVER INFORMATION SCHEMAS (Phase 20)
+# HOVER INFORMATION SCHEMAS
 # ============================================================================
 
 
@@ -753,7 +753,7 @@ class CommunityDetectionResponse(BaseModel):
 
 
 # ============================================================================
-# GRAPH VISUALIZATION SCHEMAS (Phase 20)
+# GRAPH VISUALIZATION SCHEMAS
 # ============================================================================
 
 

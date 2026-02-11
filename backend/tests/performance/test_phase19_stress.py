@@ -21,7 +21,7 @@ from upstash_redis import Redis
 import concurrent.futures
 
 # Import services
-from app.services.neural_graph import NeuralGraphService
+from app.modules.graph.neural_service import NeuralGraphService
 from app.utils.repo_parser import DependencyGraph
 
 

@@ -24,7 +24,9 @@ export async function withDemoMode<T>(
   demoCall: () => Promise<T>
 ): Promise<T> {
   if (DEMO_MODE) {
-    console.log('[DEMO MODE] Using mock data');
+    if (import.meta.env.DEV) {
+      console.log('[DEMO MODE] Using mock data');
+    }
     return demoCall();
   }
   return apiCall();

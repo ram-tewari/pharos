@@ -4,8 +4,8 @@ Recommendations Schemas
 Pydantic models for recommendation requests and responses.
 
 This module consolidates schemas from:
-- schemas/recommendation.py (Phase 5.5 basic schemas)
-- Additional schemas defined in routers/recommendations.py (Phase 11)
+- schemas/recommendation.py (Basic schemas)
+- Additional schemas defined in routers/recommendations.py (Hybrid)
 """
 
 from datetime import datetime
@@ -15,7 +15,7 @@ from pydantic import BaseModel, Field, validator
 
 
 # ============================================================================
-# Basic Recommendation Schemas (Phase 5.5)
+# Basic Recommendation Schemas
 # ============================================================================
 
 
@@ -36,7 +36,7 @@ class RecommendationResponse(BaseModel):
 
 
 # ============================================================================
-# Hybrid Recommendation Schemas (Phase 11)
+# Hybrid Recommendation Schemas
 # ============================================================================
 
 

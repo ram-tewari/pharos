@@ -1,6 +1,6 @@
 # Field Mapping Reference
 
-This document provides a comprehensive mapping of legacy field names to current field names in the Neo Alexandria 2.0 database models. This reference is essential for updating test fixtures and ensuring tests use the correct field names.
+This document provides a comprehensive mapping of legacy field names to current field names in the Pharos database models. This reference is essential for updating test fixtures and ensuring tests use the correct field names.
 
 ## Resource Model Field Mappings
 
@@ -143,7 +143,7 @@ All fields in the current Resource model (as of Phase 13):
 
 ### User Model Fields
 
-The User model in Neo Alexandria 2.0 is a **simplified model** without authentication fields. It is used primarily for the Phase 11 recommendation system.
+The User model in Pharos is a **simplified model** without authentication fields. It is used primarily for the Phase 11 recommendation system.
 
 | Field Name | Type | Notes |
 |------------|------|-------|

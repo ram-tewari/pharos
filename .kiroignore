@@ -10,6 +10,13 @@
 # Backend documentation (reference by path)
 backend/docs/
 
+# Environment secrets (never load in context)
+.env
+.env.*
+!.env.example
+!.env.*.template
+*.env
+
 # Large generated files
 *.log
 *.db

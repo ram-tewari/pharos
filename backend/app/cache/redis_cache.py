@@ -2,7 +2,7 @@
 Neo Alexandria 2.0 - Redis Cache Layer
 
 This module provides Redis-based caching with intelligent TTL management,
-pattern-based invalidation, and statistics tracking for Phase 12.5.
+pattern-based invalidation, and statistics tracking.
 
 Features:
 - Get/set operations with automatic TTL selection

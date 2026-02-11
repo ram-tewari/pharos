@@ -1,9 +1,9 @@
-# Neo Alexandria 2.0 - Repository Structure
+# Pharos - Repository Structure
 
 ## Repository Map
 
 ```
-neo-alexandria-2.0/
+pharos/
 ├── AGENTS.md                          # Agent routing and context rules
 ├── .kiro/                             # Kiro IDE configuration
 │   ├── steering/                      # Project steering docs
@@ -353,3 +353,7 @@ Each module contains:
 - [API Reference](../../backend/docs/api/overview.md)
 - [Architecture Overview](../../backend/docs/architecture/overview.md)
 - [Developer Setup Guide](../../backend/docs/guides/setup.md)
+
+---
+
+**Pharos**: Your second brain for code. Understand repositories, connect research, discover knowledge.

@@ -1,6 +1,6 @@
 # Phase 20 Features Architecture
 
-Frontend-Backend Infrastructure Support features for Neo Alexandria 2.0.
+Frontend-Backend Infrastructure Support features for Pharos.
 
 > **Phase**: 20 - Frontend-Backend Infrastructure Support  
 > **Status**: Complete  

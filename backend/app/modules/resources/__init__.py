@@ -27,7 +27,7 @@ __domain__ = "resources"
 
 # Lazy imports to avoid model conflicts
 def __getattr__(name):
-    """Lazy import to avoid model conflicts during migration phase."""
+    """Lazy import to avoid model conflicts."""
     if name == "resources_router":
         from .router import router as resources_router
 
@@ -58,7 +58,7 @@ from .schema import (
     ResourceInDB,
     ResourceStatus,
 )
-# NOTE: Model import commented out during migration phase to avoid conflicts
+# NOTE: Model import commented out to avoid conflicts
 # with existing database/models.py. Will be re-enabled after old models are removed.
 # from .model import Resource
 

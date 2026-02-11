@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Annotation Service (Phase 14)
+Neo Alexandria 2.0 - Annotation Service
 
 This module handles annotation management operations for Neo Alexandria 2.0.
 It provides CRUD operations, search functionality (full-text and semantic),

@@ -1,7 +1,7 @@
 """
 Neo Alexandria 2.0 - Scholarly Metadata API Router
 
-API endpoints for Phase 6.5 scholarly metadata access and extraction.
+API endpoints for scholarly metadata access and extraction.
 """
 
 import json

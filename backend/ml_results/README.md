@@ -1,6 +1,6 @@
 # ML Results Directory
 
-This directory stores all machine learning training, evaluation, and benchmark results for Neo Alexandria 2.0.
+This directory stores all machine learning training, evaluation, and benchmark results for Pharos.
 
 ## Purpose
 

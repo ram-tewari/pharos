@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Authority module provides subject authority control and classification tree management for Neo Alexandria 2.0. It handles normalization of subjects, creators, and publishers with canonical forms, variants, and usage tracking.
+The Authority module provides subject authority control and classification tree management for Pharos. It handles normalization of subjects, creators, and publishers with canonical forms, variants, and usage tracking.
 
 ## Purpose
 

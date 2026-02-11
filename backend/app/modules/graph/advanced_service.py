@@ -1,5 +1,5 @@
 """
-Stub implementation of GraphService for Phase 10 tests.
+Stub implementation of GraphService for tests.
 This is a minimal implementation to make tests pass.
 """
 

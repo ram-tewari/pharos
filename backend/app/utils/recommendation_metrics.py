@@ -1,5 +1,5 @@
 """
-Recommendation quality and diversity metrics for Phase 11.
+Recommendation quality and diversity metrics.
 
 This module provides functions to measure recommendation system performance:
 - Gini coefficient for diversity measurement

@@ -16,10 +16,14 @@ export function useHealthCheck() {
     queryFn: async () => {
       try {
         const response = await monitoringApi.getHealth();
-        console.log('[Monitoring] Health check response:', response);
+        if (import.meta.env.DEV) {
+          console.log('[Monitoring] Health check response:', response);
+        }
         return response;
       } catch (error) {
-        console.error('[Monitoring] Health check failed:', error);
+        if (import.meta.env.DEV) {
+          console.error('[Monitoring] Health check failed:', error);
+        }
         throw error;
       }
     },
@@ -56,7 +60,7 @@ export function usePerformanceMetrics() {
 export function useRecommendationQuality(timeRange?: string) {
   // Convert timeRange to days (default 7)
   const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 7;
-  
+
   return useQuery({
     queryKey: ['monitoring', 'recommendation-quality', days],
     queryFn: () => monitoringApi.getRecommendationQuality({ time_window_days: days }),
@@ -67,7 +71,7 @@ export function useRecommendationQuality(timeRange?: string) {
 export function useUserEngagement(timeRange?: string) {
   // Convert timeRange to days (default 7)
   const days = timeRange === '24h' ? 1 : timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 7;
-  
+
   return useQuery({
     queryKey: ['monitoring', 'user-engagement', days],
     queryFn: () => monitoringApi.getUserEngagement({ time_window_days: days }),

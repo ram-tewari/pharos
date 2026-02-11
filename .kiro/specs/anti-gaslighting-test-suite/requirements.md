@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Phase 14.5 introduces an "Anti-Gaslighting" Test Suite architecture for Neo Alexandria 2.0. This testing approach decouples test expectations from test logic using "Golden Data" (immutable JSON files). The goal is to prevent AI coding assistants from "fixing" tests by changing inline assertions when features are broken, ensuring that test failures accurately reflect implementation bugs rather than test modifications.
+Phase 14.5 introduces an "Anti-Gaslighting" Test Suite architecture for Pharos. This testing approach decouples test expectations from test logic using "Golden Data" (immutable JSON files). The goal is to prevent AI coding assistants from "fixing" tests by changing inline assertions when features are broken, ensuring that test failures accurately reflect implementation bugs rather than test modifications.
 
 **CRITICAL: This test suite is built from SCRATCH.** It does NOT use, inherit from, or reference any existing test fixtures, conftest.py files, or test utilities from the legacy test suite. All fixtures, helpers, and infrastructure are newly created specifically for this anti-gaslighting architecture.
 

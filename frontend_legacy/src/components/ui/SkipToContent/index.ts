@@ -1,1 +1,0 @@
-export { SkipToContent } from './SkipToContent';

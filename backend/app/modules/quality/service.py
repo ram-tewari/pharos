@@ -2,7 +2,7 @@
 Quality Module - Service
 
 Combined implementation with QualityService and ContentQualityAnalyzer.
-Extracted from app/services/quality_service.py as part of Phase 14 vertical slice refactoring.
+Extracted from app/services/quality_service.py as part of vertical slice refactoring.
 """
 
 from typing import Dict, List, Optional, Any, Mapping
@@ -12,7 +12,7 @@ import json
 import logging
 
 from app.utils import text_processor as tp
-from app.domain.quality import QualityScore
+from .domain import QualityScore
 from app.shared.cache import cache
 
 logger = logging.getLogger(__name__)

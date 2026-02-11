@@ -11,7 +11,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 # Skip tests if torch_geometric or required dependencies are not installed
 try:
-    from app.services.neural_graph import NeuralGraphService
+    from app.modules.graph.neural_service import NeuralGraphService
     # Try to import the required packages
     import torch_cluster
     import torch_scatter

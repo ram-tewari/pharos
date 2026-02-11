@@ -2,7 +2,7 @@
 Quality Module - API Router
 
 This module provides REST API endpoints for quality assessment in Neo Alexandria 2.0.
-Extracted from app/routers/quality.py as part of Phase 14 vertical slice refactoring.
+Extracted from app/routers/quality.py as part of vertical slice refactoring.
 """
 
 from __future__ import annotations
@@ -639,7 +639,7 @@ async def health_check(
 
 
 # ============================================================================
-# RAG EVALUATION ENDPOINTS (Phase 17.5 - Advanced RAG)
+# RAG EVALUATION ENDPOINTS (Advanced RAG)
 # ============================================================================
 
 

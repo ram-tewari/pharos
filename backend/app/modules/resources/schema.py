@@ -184,7 +184,7 @@ class ResourceStatus(BaseModel):
 
 
 # ============================================================================
-# DOCUMENT CHUNK SCHEMAS (Phase 17.5 - Advanced RAG)
+# DOCUMENT CHUNK SCHEMAS (Advanced RAG)
 # ============================================================================
 
 
@@ -235,7 +235,7 @@ class DocumentChunkResponse(BaseModel):
 
 
 # ============================================================================
-# REPOSITORY INGESTION SCHEMAS (Phase 18 - Code Intelligence)
+# REPOSITORY INGESTION SCHEMAS (Code Intelligence)
 # ============================================================================
 
 

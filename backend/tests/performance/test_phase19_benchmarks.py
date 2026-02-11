@@ -20,7 +20,7 @@ from fastapi.testclient import TestClient
 from upstash_redis import Redis
 
 # Import services
-from app.services.neural_graph import NeuralGraphService
+from app.modules.graph.neural_service import NeuralGraphService
 from app.utils.repo_parser import RepositoryParser, DependencyGraph
 
 

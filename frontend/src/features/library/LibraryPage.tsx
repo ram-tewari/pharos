@@ -25,7 +25,7 @@ import type { Document } from '@/types/library';
 export function LibraryPage() {
   const [activeView, setActiveView] = useState<'grid' | 'collections'>('grid');
   const [showUpload, setShowUpload] = useState(false);
-  
+
   const { documents, isLoading, error, refetch } = useDocuments();
   const batchMode = useCollectionsStore((state) => state.batchMode);
   const currentDocument = usePDFViewerStore((state) => state.currentDocument);
@@ -51,7 +51,9 @@ export function LibraryPage() {
 
   const handleCollectionSelect = (collectionId: string) => {
     // Filter documents by collection
-    console.log('Selected collection:', collectionId);
+    if (import.meta.env.DEV) {
+      console.log('Selected collection:', collectionId);
+    }
   };
 
   return (
@@ -62,7 +64,7 @@ export function LibraryPage() {
           <BookOpen className="h-5 w-5" />
           <h1 className="text-2xl font-bold">Library</h1>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button
             variant={activeView === 'grid' ? 'default' : 'outline'}
@@ -106,7 +108,7 @@ export function LibraryPage() {
                   <div className="border-b p-4">
                     <DocumentFilters />
                   </div>
-                  
+
                   {/* Document Grid */}
                   <ScrollArea className="flex-1">
                     <div className="p-4">

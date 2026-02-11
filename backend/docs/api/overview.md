@@ -295,7 +295,7 @@ If Redis is unavailable, rate limiting fails open (allows requests) to maintain 
 
 ## API Endpoints by Domain
 
-Neo Alexandria 2.0 uses a modular architecture where each domain is implemented as a self-contained module. All modules follow consistent patterns for routing, services, and event handling.
+Pharos uses a modular architecture where each domain is implemented as a self-contained module. All modules follow consistent patterns for routing, services, and event handling.
 
 | Module | Description | Documentation |
 |--------|-------------|---------------|

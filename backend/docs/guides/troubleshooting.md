@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-Common issues and solutions for Neo Alexandria 2.0.
+Common issues and solutions for Pharos.
 
 ## Installation Issues
 

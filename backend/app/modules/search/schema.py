@@ -182,7 +182,7 @@ class BatchSparseEmbeddingResponse(BaseModel):
 
 
 # ============================================================================
-# SYNTHETIC QUESTION SCHEMAS (Phase 17.5 - Advanced RAG)
+# SYNTHETIC QUESTION SCHEMAS (Advanced RAG)
 # ============================================================================
 
 
@@ -218,7 +218,7 @@ class SyntheticQuestionResponse(BaseModel):
 
 
 # ============================================================================
-# ADVANCED SEARCH SCHEMAS (Phase 17.5 - Advanced RAG)
+# ADVANCED SEARCH SCHEMAS (Advanced RAG)
 # ============================================================================
 
 

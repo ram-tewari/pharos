@@ -2,7 +2,7 @@
 
 ## Overview
 
-Neo Alexandria 2.0 uses a hybrid edge-cloud architecture (Phase 19) that splits the backend into two complementary components:
+Pharos uses a hybrid edge-cloud architecture (Phase 19) that splits the backend into two complementary components:
 
 - **Cloud API (Render)**: Lightweight control plane for orchestration
 - **Edge Worker (Local)**: GPU-accelerated compute plane for ML operations

@@ -188,7 +188,7 @@ class MultiHopAgent:
 class ArchitectureParser:
     """
     Service for extracting structured information from architecture documents.
-    Leverages existing RepositoryParser from Phase 18 to compare documented vs implemented architecture.
+    Leverages existing RepositoryParser to compare documented vs implemented architecture.
     """
     
     def __init__(self, db: Session, llm_client: Optional[Any] = None):

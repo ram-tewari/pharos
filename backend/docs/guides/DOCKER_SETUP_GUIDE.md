@@ -1,6 +1,6 @@
 # Docker Development Infrastructure Setup Guide
 
-This guide explains how to set up and use the Docker-based development infrastructure for Neo Alexandria 2.0.
+This guide explains how to set up and use the Docker-based development infrastructure for Pharos.
 
 ## Overview
 

@@ -1,4 +1,4 @@
-# Neo Alexandria 2.0 - Technical Stack
+# Pharos - Technical Stack
 
 ## Architecture
 
@@ -6,6 +6,7 @@
 **Pattern**: Vertical slices with shared kernel
 **Deployment**: Cloud API (Render) + Edge Worker (Local GPU)
 **Status**: Production (Phase 19 Complete)
+**Focus**: Code intelligence and research management for developers
 
 ### Architectural Principles
 
@@ -78,11 +79,12 @@
 - **SQLAlchemy 2.0** - ORM with async support
 
 ### AI/ML
-- **Transformers (Hugging Face)** - NLP models
+- **Transformers (Hugging Face)** - NLP models for summarization and classification
 - **PyTorch** - Deep learning framework
-- **Sentence-Transformers** - Embedding generation
+- **Sentence-Transformers** - Embedding generation (nomic-embed-text-v1)
 - **FAISS** - Vector similarity search
 - **spaCy** - NLP processing
+- **Tree-Sitter** - Multi-language code parsing (AST generation)
 
 ### Task Processing
 - **Celery** - Async task queue

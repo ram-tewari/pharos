@@ -1,5 +1,5 @@
 """
-Hybrid Recommendation Service for Phase 11.
+Hybrid Recommendation Service.
 
 This service implements a two-stage recommendation pipeline:
 1. Candidate Generation: Multi-strategy candidate generation (collaborative, content, graph)
@@ -396,7 +396,7 @@ class HybridRecommendationService:
                 content_score = candidate.get("content_score", 0.0)
                 graph_score = candidate.get("graph_score", 0.0)
 
-                # Quality score (from Phase 9)
+                # Quality score
                 quality_score = (
                     resource.quality_overall if resource.quality_overall else 0.5
                 )

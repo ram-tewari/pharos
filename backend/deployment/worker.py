@@ -27,7 +27,7 @@ load_dotenv()
 # Import services
 try:
     from upstash_redis import Redis
-    from app.services.neural_graph import NeuralGraphService
+    from app.modules.graph.neural_service import NeuralGraphService
     from app.utils.repo_parser import RepositoryParser
 except ImportError as e:
     print(f"❌ Import Error: {e}")

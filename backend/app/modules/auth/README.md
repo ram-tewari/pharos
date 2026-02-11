@@ -1,6 +1,6 @@
 # Authentication Module
 
-JWT-based authentication with OAuth2 support for Neo Alexandria 2.0.
+JWT-based authentication with OAuth2 support for Pharos.
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Steering Documentation
 
-Project-level context and guidelines for Neo Alexandria 2.0.
+Project-level context and guidelines for Pharos.
 
 ## Purpose
 

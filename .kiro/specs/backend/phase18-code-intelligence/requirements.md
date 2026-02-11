@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification defines the Code Intelligence Pipeline for Neo Alexandria 2.0, transforming the system from a "File Library" to a "Code-Aware Context Server." The pipeline enables intelligent ingestion, analysis, and retrieval of code repositories through AST-based chunking and static analysis.
+This specification defines the Code Intelligence Pipeline for Pharos, transforming the system from a "File Library" to a "Code-Aware Context Server." The pipeline enables intelligent ingestion, analysis, and retrieval of code repositories through AST-based chunking and static analysis.
 
 ## Glossary
 

@@ -1,6 +1,6 @@
 # Configuration Files
 
-This directory contains all configuration files for Neo Alexandria 2.0.
+This directory contains all configuration files for Pharos.
 
 ## Contents
 

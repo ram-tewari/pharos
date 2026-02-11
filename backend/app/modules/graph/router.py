@@ -1,10 +1,10 @@
 """
-Neo Alexandria 2.0 - Graph API Router for Phase 5
+Neo Alexandria 2.0 - Graph API Router
 
 Provides REST endpoints for the hybrid knowledge graph system, enabling
 mind-map neighbor exploration and global overview analysis.
 
-Migrated from app/routers/graph.py to modules/graph/router.py (Phase 14)
+Migrated from app/routers/graph.py to modules/graph/router.py
 """
 
 from __future__ import annotations
@@ -755,7 +755,7 @@ def get_hypothesis(
 
 
 # ============================================================================
-# ADVANCED RAG ENDPOINTS (Phase 17.5)
+# ADVANCED RAG ENDPOINTS
 # ============================================================================
 
 
@@ -1361,7 +1361,7 @@ def traverse_graph(
 
 
 # ============================================================================
-# CODE INTELLIGENCE ENDPOINTS (Phase 20)
+# CODE INTELLIGENCE ENDPOINTS
 # ============================================================================
 
 

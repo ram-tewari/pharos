@@ -8,10 +8,20 @@ dist/
 build/
 *.log
 
-# Environment variables
+# Environment variables (exclude all except templates/examples)
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.*.template
+!.env.*.example
+*.env
+backend/config/.env
+backend/config/.env.*
+!backend/config/.env.example
+!backend/config/.env.*.template
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
 # IDE
 .vscode/

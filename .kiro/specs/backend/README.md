@@ -1,6 +1,6 @@
 # Backend Specifications
 
-Backend specifications for Neo Alexandria 2.0 (Python/FastAPI).
+Backend specifications for Pharos (Python/FastAPI).
 
 ## Specs by Category
 

@@ -1,6 +1,6 @@
 # Event Catalog
 
-Complete reference for all events in Neo Alexandria 2.0's event-driven architecture.
+Complete reference for all events in Pharos's event-driven architecture.
 
 > **Phase 14 Complete**: This catalog documents all 25+ events used for inter-module communication in the fully modular vertical slice architecture.
 
@@ -22,7 +22,7 @@ Complete reference for all events in Neo Alexandria 2.0's event-driven architect
 
 ### What Are Events?
 
-Events are the primary mechanism for communication between modules in Neo Alexandria 2.0. Instead of modules directly calling each other (which creates tight coupling), modules emit events when something significant happens, and other modules subscribe to events they care about.
+Events are the primary mechanism for communication between modules in Pharos. Instead of modules directly calling each other (which creates tight coupling), modules emit events when something significant happens, and other modules subscribe to events they care about.
 
 ### Benefits of Event-Driven Architecture
 

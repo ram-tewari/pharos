@@ -1,6 +1,6 @@
 # Vertical Slice Modules & Service Architecture
 
-Module architecture, service layer, and class hierarchies for Neo Alexandria 2.0.
+Module architecture, service layer, and class hierarchies for Pharos.
 
 > **Last Updated**: Phase 17 - Production Hardening
 
@@ -10,7 +10,7 @@ Phase 17 adds authentication and rate limiting, completing the production-ready 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                    NEO ALEXANDRIA 2.0 - COMPLETE MODULAR ARCHITECTURE                   │
+│                    Pharos - COMPLETE MODULAR ARCHITECTURE                   │
 │                              (14 Vertical Slice Modules)                                │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                         │

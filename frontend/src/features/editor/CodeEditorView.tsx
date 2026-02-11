@@ -234,7 +234,9 @@ export function CodeEditorView({ file, className = '' }: CodeEditorViewProps) {
               resourceId={file.resource_id}
               onBadgeClick={(line) => {
                 // Optional: Show quality details on click
-                console.log('Quality badge clicked at line:', line);
+                if (import.meta.env.DEV) {
+                  console.log('Quality badge clicked at line:', line);
+                }
               }}
             />
           )}
@@ -247,7 +249,9 @@ export function CodeEditorView({ file, className = '' }: CodeEditorViewProps) {
               visible={true}
               onAnnotationClick={(annotation) => {
                 // Optional: Open annotation panel or show details
-                console.log('Annotation clicked:', annotation);
+                if (import.meta.env.DEV) {
+                  console.log('Annotation clicked:', annotation);
+                }
               }}
               onAnnotationHover={(annotation) => {
                 // Optional: Show annotation preview

@@ -2,11 +2,11 @@
 
 ## Introduction
 
-Phase 17 focuses on hardening Neo Alexandria 2.0 for production deployment by implementing critical infrastructure improvements: PostgreSQL database support, API key authentication, granular task tracking for frontend integration, and Celery worker optimization. This phase transforms the system from a development prototype into a production-ready application.
+Phase 17 focuses on hardening Pharos for production deployment by implementing critical infrastructure improvements: PostgreSQL database support, API key authentication, granular task tracking for frontend integration, and Celery worker optimization. This phase transforms the system from a development prototype into a production-ready application.
 
 ## Glossary
 
-- **System**: Neo Alexandria 2.0 backend application
+- **System**: Pharos backend application
 - **API_Gateway**: FastAPI application entry point that handles HTTP requests
 - **Auth_Service**: Authentication and authorization service using API keys
 - **Status_Tracker**: Service for tracking long-running background task progress

@@ -1,10 +1,10 @@
 # API Reference
 
-Complete API documentation for Neo Alexandria 2.0.
+Complete API documentation for Pharos.
 
 ## Module-Based Architecture
 
-Neo Alexandria 2.0 uses a modular architecture where each domain is implemented as a self-contained vertical slice. Each module has its own router, service, schemas, models, and event handlers.
+Pharos uses a modular architecture where each domain is implemented as a self-contained vertical slice. Each module has its own router, service, schemas, models, and event handlers.
 
 ## Quick Links
 

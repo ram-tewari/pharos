@@ -1,6 +1,6 @@
 # Graph Intelligence Guide
 
-How to use centrality metrics, community detection, and graph visualization in Neo Alexandria 2.0.
+How to use centrality metrics, community detection, and graph visualization in Pharos.
 
 > **Phase**: 20 - Frontend-Backend Infrastructure Support
 > **Status**: Complete

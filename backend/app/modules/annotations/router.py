@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Annotation API Endpoints (Phase 14)
+Neo Alexandria 2.0 - Annotation API Endpoints
 
 This module provides REST API endpoints for annotation management, search, and export.
 

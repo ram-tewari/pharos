@@ -1,6 +1,6 @@
 # Architecture Overview
 
-High-level system architecture for Neo Alexandria 2.0.
+High-level system architecture for Pharos.
 
 > **Last Updated**: Phase 14 - Complete Vertical Slice Refactor
 
@@ -23,7 +23,7 @@ High-level system architecture for Neo Alexandria 2.0.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                    NEO ALEXANDRIA 2.0 - COMPLETE MODULAR ARCHITECTURE                   │
+│                    Pharos - COMPLETE MODULAR ARCHITECTURE                   │
 │                              (14 Vertical Slice Modules)                                │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                         │

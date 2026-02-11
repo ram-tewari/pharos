@@ -44,7 +44,7 @@ from .schema import (
 from .service import CurationService
 
 
-router = APIRouter(prefix="/curation", tags=["curation"])
+router = APIRouter(prefix="/api/curation", tags=["curation"])
 
 
 @router.get("/review-queue", response_model=ReviewQueueResponse)

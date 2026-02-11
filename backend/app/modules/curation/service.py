@@ -551,5 +551,5 @@ class CurationService:
         Returns:
             List of duplicate resource ID pairs
         """
-        # Placeholder for future duplication detection (Phase 3+)
+        # Placeholder for future duplication detection
         return []

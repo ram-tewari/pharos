@@ -37,7 +37,7 @@ from .schema import (
 
 # Lazy imports to avoid model conflicts
 def __getattr__(name):
-    """Lazy import to avoid model conflicts during migration phase."""
+    """Lazy import to avoid model conflicts."""
     if name == "collections_router":
         from .router import router
 

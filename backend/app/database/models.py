@@ -139,7 +139,7 @@ class Resource(Base):
         String(255), nullable=True, index=True
     )
 
-    # Vector embedding for Phase 4 hybrid search
+    # Vector embedding for hybrid search
     # Use Text to avoid JSON casting issues with NULL in PostgreSQL
     embedding: Mapped[List[float] | None] = mapped_column(
         Text,
@@ -156,7 +156,7 @@ class Resource(Base):
 
     search_vector: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Phase 6.5: Scholarly Metadata Fields
+    # Scholarly Metadata Fields
     authors: Mapped[str | None] = mapped_column(Text, nullable=True)
     affiliations: Mapped[str | None] = mapped_column(Text, nullable=True)
     doi: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
@@ -270,7 +270,7 @@ class Resource(Base):
 
 
 # ============================================================================
-# Advanced RAG Models - Phase 17.5
+# Advanced RAG Models
 # ============================================================================
 
 
@@ -335,7 +335,7 @@ class ChunkLink(Base):
     Bidirectional semantic link between document chunks.
 
     Stores similarity-based links between PDF chunks and code chunks
-    for auto-linking functionality in Phase 20.
+    for auto-linking functionality.
     """
 
     __tablename__ = "chunk_links"
@@ -394,7 +394,7 @@ class PlanningSession(Base):
     """
     Stores multi-hop planning sessions for iterative refinement.
     
-    Part of Phase 20 AI Planning infrastructure.
+    Part of the AI Planning infrastructure.
     """
     __tablename__ = "planning_sessions"
     
@@ -625,7 +625,7 @@ class GraphRelationship(Base):
 
     Stores relationships between entities with provenance linking back to source chunks.
     Supports both academic relationships (CONTRADICTS, SUPPORTS, EXTENDS, CITES) and
-    code-specific relationships (CALLS, IMPORTS, DEFINES) for Phase 18 compatibility.
+    code-specific relationships (CALLS, IMPORTS, DEFINES).
     """
 
     __tablename__ = "graph_relationships"
@@ -988,7 +988,7 @@ class SyntheticQuestion(Base):
 
 class UserProfile(Base):
     """
-    User profile for personalized recommendations in Phase 11.
+    User profile for personalized recommendations.
 
     Stores user preferences, learned patterns, and recommendation settings.
     Supports diversity, novelty, and recency preferences for hybrid recommendations.
@@ -1070,7 +1070,7 @@ class UserProfile(Base):
 
 class UserInteraction(Base):
     """
-    User-resource interaction tracking for Phase 11 recommendation engine.
+    User-resource interaction tracking for recommendation engine.
 
     Tracks all user interactions with resources using implicit feedback signals.
     Supports multiple interaction types with computed interaction strength.

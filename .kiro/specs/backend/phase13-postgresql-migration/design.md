@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design document outlines the architecture and implementation strategy for migrating Neo Alexandria 2.0 from SQLite to PostgreSQL. The migration maintains backward compatibility with SQLite for development while providing production-grade PostgreSQL support with enhanced concurrency, performance, and reliability.
+This design document outlines the architecture and implementation strategy for migrating Pharos from SQLite to PostgreSQL. The migration maintains backward compatibility with SQLite for development while providing production-grade PostgreSQL support with enhanced concurrency, performance, and reliability.
 
 ### Migration Goals
 

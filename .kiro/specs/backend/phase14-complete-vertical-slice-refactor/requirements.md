@@ -8,7 +8,7 @@ The remaining domains to migrate include: Annotations, Quality, Taxonomy/Classif
 
 ## Glossary
 
-- **System**: Neo Alexandria 2.0 backend application
+- **System**: Pharos backend application
 - **Vertical Slice Module**: A self-contained module containing router, service, schema, model, and handlers for a specific business domain
 - **Shared Kernel**: Common components used across all modules (database, event_bus, base_model, embeddings)
 - **Domain Module**: A vertical slice representing a bounded context

@@ -635,7 +635,11 @@ def create_test_resource(db_session: Session):
     Factory fixture for creating test resources.
 
     Returns a function that creates resources with sensible defaults.
+    
+    Note: The embedding field is stored as Text in the database, so we
+    serialize list embeddings to JSON strings for SQLite compatibility.
     """
+    import json
 
     def _create_resource(**kwargs):
         defaults = {
@@ -646,6 +650,11 @@ def create_test_resource(db_session: Session):
             "quality_score": 0.0,
         }
         defaults.update(kwargs)
+        
+        # Serialize embedding to JSON string if it's a list
+        # Resource.embedding column is Text type, not JSON
+        if "embedding" in defaults and isinstance(defaults["embedding"], list):
+            defaults["embedding"] = json.dumps(defaults["embedding"])
 
         resource = Resource(**defaults)
         db_session.add(resource)

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Graph module provides knowledge graph, citation network, and literature-based discovery (LBD) functionality for Neo Alexandria 2.0. It enables relationship analysis, citation extraction, and hypothesis discovery across the resource collection.
+The Graph module provides knowledge graph, citation network, and literature-based discovery (LBD) functionality for Pharos. It enables relationship analysis, citation extraction, and hypothesis discovery across the resource collection.
 
 ## Features
 

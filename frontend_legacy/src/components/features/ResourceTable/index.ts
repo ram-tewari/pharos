@@ -1,1 +1,0 @@
-export { ResourceTable } from './ResourceTable';

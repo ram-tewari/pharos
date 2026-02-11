@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-Installation and environment configuration for Neo Alexandria 2.0.
+Installation and environment configuration for Pharos.
 
 > **Phase 14 Complete**: Neo Alexandria now uses a fully modular vertical slice architecture with 13 self-contained modules, enhanced shared kernel, and event-driven communication.
 

@@ -1,4 +1,4 @@
-# 🚀 Neo Alexandria 2.0 - Quick Start
+# 🚀 Pharos - Quick Start
 
 ## TL;DR - Get Running in 3 Commands
 

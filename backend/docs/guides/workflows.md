@@ -1,6 +1,6 @@
 # Development Workflows
 
-Common development tasks and patterns for Neo Alexandria 2.0.
+Common development tasks and patterns for Pharos.
 
 > **Phase 14 Complete**: This guide reflects the fully modular vertical slice architecture with 13 self-contained modules, enhanced shared kernel, and event-driven communication patterns.
 

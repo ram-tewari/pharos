@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Neo Alexandria 2.0 application has 1,867 tests with 386 failures (20.7%) and 102 errors (5.5%) after fixing import path issues. This spec addresses the systematic resolution of all genuine coding errors to ensure the website functions perfectly. The failures span across database models, service APIs, event systems, monitoring infrastructure, and ML classification features.
+The Pharos application has 1,867 tests with 386 failures (20.7%) and 102 errors (5.5%) after fixing import path issues. This spec addresses the systematic resolution of all genuine coding errors to ensure the website functions perfectly. The failures span across database models, service APIs, event systems, monitoring infrastructure, and ML classification features.
 
 ## Glossary
 

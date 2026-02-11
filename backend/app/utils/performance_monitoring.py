@@ -1,5 +1,5 @@
 """
-Performance monitoring utilities for Phase 11 Hybrid Recommendation Engine.
+Performance monitoring utilities for Hybrid Recommendation Engine.
 
 Provides decorators and utilities for:
 - Timing method execution

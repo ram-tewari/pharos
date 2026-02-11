@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Hybrid Knowledge Graph Service for Phase 5
+Neo Alexandria 2.0 - Hybrid Knowledge Graph Service
 
 Implements hybrid graph scoring that fuses vector similarity, shared canonical
 subjects, and classification code matches to build a knowledge graph suitable
@@ -867,7 +867,7 @@ def generate_global_overview(
 
 
 class GraphService:
-    """Service for Phase 10 multi-layer graph construction and neighbor discovery."""
+    """Service for multi-layer graph construction and neighbor discovery."""
 
     def __init__(self, db: Session):
         self.db = db
@@ -1535,7 +1535,7 @@ class CommunityDetectionService:
             "community_sizes": community_sizes
         }
 
-# Phase 17.5: Graph Extraction Service for Advanced RAG
+# Graph Extraction Service for Advanced RAG
 class GraphExtractionService:
     """
     Service for extracting entities and relationships from document chunks.

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Phase 0 establishes the foundational architecture for the Neo Alexandria 2.0 Single Page Application (SPA). This phase focuses on creating a robust authentication flow, proper API integration, and a scalable feature-sliced architecture that will support future development.
+Phase 0 establishes the foundational architecture for the Pharos Single Page Application (SPA). This phase focuses on creating a robust authentication flow, proper API integration, and a scalable feature-sliced architecture that will support future development.
 
 ## Glossary
 

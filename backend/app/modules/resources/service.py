@@ -1368,7 +1368,7 @@ def delete_resource(db: Session, resource_id) -> None:
 
 
 # ============================================================================
-# CHUNKING SERVICE (Phase 17.5 - Advanced RAG)
+# CHUNKING SERVICE (Advanced RAG)
 # ============================================================================
 
 
@@ -1696,7 +1696,7 @@ class ChunkingService:
 
             stored_chunks = []
 
-            # PHASE 1: Generate all embeddings first (fail fast if embedding service fails)
+            # STEP 1: Generate all embeddings first (fail fast if embedding service fails)
             chunk_data_with_embeddings = []
             for chunk_dict in chunks:
                 content = chunk_dict["content"]
@@ -1727,7 +1727,7 @@ class ChunkingService:
                     "chunk_metadata": chunk_metadata
                 })
 
-            # PHASE 2: Create all chunk records (only after all embeddings succeed)
+            # STEP 2: Create all chunk records (only after all embeddings succeed)
             for chunk_data in chunk_data_with_embeddings:
                 chunk_record = db_models.DocumentChunk(
                     resource_id=resource_uuid,
@@ -1739,7 +1739,7 @@ class ChunkingService:
                 )
                 stored_chunks.append(chunk_record)
 
-            # PHASE 3: Bulk insert all chunks at once
+            # STEP 3: Bulk insert all chunks at once
             if stored_chunks:
                 self.db.bulk_save_objects(stored_chunks)
                 # Commit transaction (if requested)
@@ -1925,7 +1925,7 @@ class ChunkingService:
 
 
 # ============================================================================
-# Auto-Linking Service - Phase 20
+# Auto-Linking Service
 # ============================================================================
 
 

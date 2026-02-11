@@ -10,6 +10,7 @@ Tests cover:
 """
 
 import uuid
+import json
 import pytest
 import numpy as np
 
@@ -44,7 +45,7 @@ class TestAggregateEmbedding:
                 title=f"Resource {i}",
                 source=f"http://example.com/{i}",
                 type="article",
-                embedding=emb,
+                embedding=json.dumps(emb),  # Serialize for SQLite Text column
                 quality_score=0.8,
             )
             db_session.add(resource)
@@ -166,7 +167,7 @@ class TestResourceRecommendations:
             title="Similar ML Paper",
             source="http://example.com/similar",
             type="article",
-            embedding=[0.9, 0.1, 0.0],  # Close to collection
+            embedding=json.dumps([0.9, 0.1, 0.0]),  # Serialize for SQLite Text column
             quality_score=0.9,
         )
         db_session.add(similar_resource)
@@ -176,7 +177,7 @@ class TestResourceRecommendations:
             title="Unrelated Paper",
             source="http://example.com/dissimilar",
             type="article",
-            embedding=[0.0, 0.0, 1.0],  # Far from collection
+            embedding=json.dumps([0.0, 0.0, 1.0]),  # Serialize for SQLite Text column
             quality_score=0.8,
         )
         db_session.add(dissimilar_resource)
@@ -212,7 +213,7 @@ class TestResourceRecommendations:
             title="In Collection",
             source="http://example.com/in",
             type="article",
-            embedding=[0.95, 0.05, 0.0],
+            embedding=json.dumps([0.95, 0.05, 0.0]),  # Serialize for SQLite Text column
             quality_score=0.9,
         )
         db_session.add(in_collection)
@@ -228,7 +229,7 @@ class TestResourceRecommendations:
             title="Not In Collection",
             source="http://example.com/not-in",
             type="article",
-            embedding=[0.9, 0.1, 0.0],
+            embedding=json.dumps([0.9, 0.1, 0.0]),  # Serialize for SQLite Text column
             quality_score=0.9,
         )
         db_session.add(not_in_collection)

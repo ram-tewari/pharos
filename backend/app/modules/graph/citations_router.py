@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Citation API Endpoints (Phase 6)
+Neo Alexandria 2.0 - Citation API Endpoints
 
 This module provides REST API endpoints for citation management and graph visualization.
 

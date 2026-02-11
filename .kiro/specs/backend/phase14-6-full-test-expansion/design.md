@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 14.6 extends the Anti-Gaslighting test architecture to provide comprehensive coverage across all 13 modules in Neo Alexandria 2.0. The design implements four distinct testing layers: Golden Logic Tests, Edge Case & Pattern Tests, Integration Tests, and Performance Regression Tests.
+Phase 14.6 extends the Anti-Gaslighting test architecture to provide comprehensive coverage across all 13 modules in Pharos. The design implements four distinct testing layers: Golden Logic Tests, Edge Case & Pattern Tests, Integration Tests, and Performance Regression Tests.
 
 ## Architecture
 
@@ -634,7 +634,7 @@ def db_session():
 
 ```python
 """
-Universal test template for Neo Alexandria 2.0 modules.
+Universal test template for Pharos modules.
 
 Copy this file to tests/modules/[module_name]/test_[feature].py
 and customize for your specific module.

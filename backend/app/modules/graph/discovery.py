@@ -1,5 +1,5 @@
 """
-Literature-Based Discovery (LBD) Service for Phase 16.7
+Literature-Based Discovery (LBD) Service
 
 Implements the ABC discovery pattern for hypothesis generation:
 - Find resources mentioning concept A

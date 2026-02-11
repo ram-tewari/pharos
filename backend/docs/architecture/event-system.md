@@ -1,6 +1,6 @@
 # Event System Architecture
 
-Event-driven communication, Celery task queue, and Redis caching for Neo Alexandria 2.0.
+Event-driven communication, Celery task queue, and Redis caching for Pharos.
 
 > **Last Updated**: Phase 14 - Complete Vertical Slice Refactor
 

@@ -1,4 +1,4 @@
-# Neo Alexandria 2.0 - Kiro Specs
+# Pharos - Kiro Specs
 
 This directory contains all feature specifications organized by domain.
 

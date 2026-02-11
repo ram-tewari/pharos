@@ -6,7 +6,7 @@ This module implements state-of-the-art summarization evaluation using:
 - FineSurE: Fine-grained summarization evaluation for completeness and conciseness
 - BERTScore: Semantic similarity metric using BERT embeddings
 
-Extracted from app/services/summarization_evaluator.py as part of Phase 14 vertical slice refactoring.
+Extracted from app/services/summarization_evaluator.py as part of vertical slice refactoring.
 
 Features:
 - G-Eval metrics with Flan-T5-Large (self-hosted, no API costs)

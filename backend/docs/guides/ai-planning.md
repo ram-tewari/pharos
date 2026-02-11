@@ -1,6 +1,6 @@
 # AI Planning Guide
 
-How to use multi-hop planning and architecture document parsing in Neo Alexandria 2.0.
+How to use multi-hop planning and architecture document parsing in Pharos.
 
 > **Phase**: 20 - Frontend-Backend Infrastructure Support
 > **Status**: Complete

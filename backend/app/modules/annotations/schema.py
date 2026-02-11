@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Annotation Schemas (Phase 14)
+Neo Alexandria 2.0 - Annotation Schemas
 
 This module defines Pydantic schemas for annotation-related API requests and responses.
 

@@ -1,6 +1,6 @@
 # Architecture Decision Records
 
-Key architectural decisions for Neo Alexandria 2.0.
+Key architectural decisions for Pharos.
 
 ## ADR-001: Vertical Slice Architecture
 

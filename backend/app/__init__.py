@@ -19,8 +19,10 @@ The application includes the following feature modules:
 """
 
 import logging
-from contextlib import asynccontextmanager
+import importlib
+import pkgutil
 from typing import List, Tuple, Callable
+import sys
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -64,7 +66,7 @@ def register_all_modules(app: FastAPI) -> None:
 
     # Define modules to register: (module_name, import_path, router_names)
     # router_names can be a single string or a list of strings for modules with multiple routers
-    # Phase 13.5 modules (completed)
+    # Modular vertical slices (completed)
     base_modules: List[Tuple[str, str, List[str]]] = [
         ("collections", "app.modules.collections", ["collections_router"]),
         ("resources", "app.modules.resources", ["resources_router"]),
@@ -113,7 +115,7 @@ def register_all_modules(app: FastAPI) -> None:
         # Try to load redis modules but don't fail if redis unavailable
         modules.extend(redis_modules)
         
-        # Add Phase 19 ingestion router for cloud API
+        # Add edge-cloud ingestion router for cloud API
         try:
             from app.routers.ingestion import router as ingestion_router
             app.include_router(ingestion_router)
@@ -534,7 +536,7 @@ def create_app() -> FastAPI:
     except Exception:
         pass
 
-    # Register modular vertical slices (Collections, Resources, Search, and Phase 14 modules)
+    # Register modular vertical slices (Collections, Resources, Search, and all modules)
     # This must happen before processing requests to ensure event handlers are registered
     logger.info("Registering modular vertical slices...")
     register_all_modules(app)

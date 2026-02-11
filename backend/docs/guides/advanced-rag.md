@@ -4,7 +4,7 @@
 
 ## Overview
 
-Neo Alexandria 2.0's Advanced RAG Architecture provides sophisticated retrieval strategies that go beyond simple semantic search. This guide explains the key concepts, retrieval strategies, and usage patterns for building high-quality RAG applications.
+Pharos's Advanced RAG Architecture provides sophisticated retrieval strategies that go beyond simple semantic search. This guide explains the key concepts, retrieval strategies, and usage patterns for building high-quality RAG applications.
 
 ## Table of Contents
 

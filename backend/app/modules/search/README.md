@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Search module provides comprehensive search functionality for Neo Alexandria 2.0, including full-text search, semantic search, sparse vector search, and hybrid search with advanced reranking capabilities.
+The Search module provides comprehensive search functionality for Pharos, including full-text search, semantic search, sparse vector search, and hybrid search with advanced reranking capabilities.
 
 ## Purpose
 

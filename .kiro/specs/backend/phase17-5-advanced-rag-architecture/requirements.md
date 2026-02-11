@@ -2,11 +2,11 @@
 
 ## Introduction
 
-Phase 17.5 upgrades Neo Alexandria 2.0 from "Naive RAG" to advanced RAG patterns based on the NirDiamant RAG Techniques resource. This phase decouples retrieval units from generation units, introduces semantic graph capabilities for GraphRAG, enables HyDE (Hypothetical Document Embeddings) query expansion, and implements rigorous evaluation metrics. The goal is to significantly improve retrieval quality, context relevance, and system measurability.
+Phase 17.5 upgrades Pharos from "Naive RAG" to advanced RAG patterns based on the NirDiamant RAG Techniques resource. This phase decouples retrieval units from generation units, introduces semantic graph capabilities for GraphRAG, enables HyDE (Hypothetical Document Embeddings) query expansion, and implements rigorous evaluation metrics. The goal is to significantly improve retrieval quality, context relevance, and system measurability.
 
 ## Glossary
 
-- **System**: Neo Alexandria 2.0 backend application
+- **System**: Pharos backend application
 - **RAG**: Retrieval-Augmented Generation - pattern for combining retrieval with LLM generation
 - **Naive_RAG**: Basic RAG pattern where entire documents are retrieved and used as context
 - **Parent_Child_Chunking**: Pattern where small chunks are retrieved but larger parent context is provided to LLM

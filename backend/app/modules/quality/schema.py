@@ -2,7 +2,7 @@
 Quality Module - Schemas
 
 This module defines Pydantic schemas for quality assessment data validation and serialization.
-Extracted from app/schemas/quality.py as part of Phase 14 vertical slice refactoring.
+Extracted from app/schemas/quality.py as part of vertical slice refactoring.
 
 Schemas:
 - QualityDetailsResponse: Full quality dimension breakdown
@@ -227,7 +227,7 @@ class ReviewQueueResponse(BaseModel):
 
 
 # ============================================================================
-# RAG EVALUATION SCHEMAS (Phase 17.5 - Advanced RAG)
+# RAG EVALUATION SCHEMAS (Advanced RAG)
 # ============================================================================
 
 

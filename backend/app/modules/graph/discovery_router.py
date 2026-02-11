@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Discovery API Router for Phase 10
+Neo Alexandria 2.0 - Discovery API Router
 
 Provides REST endpoints for Literature-Based Discovery (LBD) implementing
 the ABC paradigm for hypothesis generation and multi-hop neighbor discovery.

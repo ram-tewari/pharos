@@ -1,6 +1,6 @@
 # Development Setup Guide
 
-Installation and environment configuration for Neo Alexandria 2.0 Frontend.
+Installation and environment configuration for Pharos Frontend.
 
 > **Phase 1 Complete**: Neo Alexandria frontend now has a complete workbench layout with command palette, sidebar navigation, and theme system.
 

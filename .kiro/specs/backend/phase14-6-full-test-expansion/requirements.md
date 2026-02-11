@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Phase 14.6 expands the Anti-Gaslighting test architecture established in Phase 14.5 to cover ALL 13 modules in Neo Alexandria 2.0. This phase implements comprehensive testing across four distinct layers: Golden Logic Tests, Edge Case & Pattern Tests, Integration Tests, and Performance Regression Tests.
+Phase 14.6 expands the Anti-Gaslighting test architecture established in Phase 14.5 to cover ALL 13 modules in Pharos. This phase implements comprehensive testing across four distinct layers: Golden Logic Tests, Edge Case & Pattern Tests, Integration Tests, and Performance Regression Tests.
 
 ## Glossary
 

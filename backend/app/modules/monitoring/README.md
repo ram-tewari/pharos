@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Monitoring module provides comprehensive system health monitoring, metrics aggregation, and observability features for Neo Alexandria 2.0. It aggregates metrics from all other modules and provides a unified view of system health.
+The Monitoring module provides comprehensive system health monitoring, metrics aggregation, and observability features for Pharos. It aggregates metrics from all other modules and provides a unified view of system health.
 
 ## Responsibilities
 

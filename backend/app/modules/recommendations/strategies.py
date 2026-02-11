@@ -13,7 +13,7 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 import logging
 
-from app.domain.recommendation import Recommendation, RecommendationScore
+from .domain import Recommendation, RecommendationScore
 
 logger = logging.getLogger(__name__)
 

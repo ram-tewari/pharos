@@ -143,7 +143,7 @@ class SearchService:
         return SparseEmbeddingService(self.db, model_name=model_name)
 
     # ========================================================================
-    # Phase 17.5: Parent-Child Retrieval
+    # Parent-Child Retrieval
     # ========================================================================
 
     def parent_child_search(
@@ -334,7 +334,7 @@ class SearchService:
         return min(score, 1.0)
 
     # ========================================================================
-    # Phase 17.5: GraphRAG Retrieval
+    # GraphRAG Retrieval
     # ========================================================================
 
     def graphrag_search(
@@ -579,7 +579,7 @@ class SearchService:
         return results
 
     # ========================================================================
-    # Phase 17.5: Contradiction Discovery
+    # Contradiction Discovery
     # ========================================================================
 
     def discover_contradictions(
@@ -691,7 +691,7 @@ class SearchService:
         return results
 
     # ========================================================================
-    # Phase 17.5: Question-Based Retrieval (Reverse HyDE)
+    # Question-Based Retrieval (Reverse HyDE)
     # ========================================================================
 
     def question_search(
@@ -912,7 +912,7 @@ class HybridSearchStrategy:
         return resources, metadata
 
 
-# Phase 17.5: Synthetic Question Service for Reverse HyDE
+# Synthetic Question Service for Reverse HyDE
 class SyntheticQuestionService:
     """
     Service for generating synthetic questions from document chunks.

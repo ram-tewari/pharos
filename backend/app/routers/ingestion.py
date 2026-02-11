@@ -1,5 +1,5 @@
 """
-Ingestion Router for Phase 19 - Hybrid Edge-Cloud Orchestration
+Ingestion Router for Hybrid Edge-Cloud Orchestration
 
 This router handles repository ingestion task dispatch to the edge worker.
 It implements:

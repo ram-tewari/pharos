@@ -1,6 +1,6 @@
 # Document Intelligence Guide
 
-How to use PDF metadata extraction and auto-linking features in Neo Alexandria 2.0.
+How to use PDF metadata extraction and auto-linking features in Pharos.
 
 > **Phase**: 20 - Frontend-Backend Infrastructure Support
 > **Status**: Complete

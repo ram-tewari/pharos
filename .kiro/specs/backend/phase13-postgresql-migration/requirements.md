@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document specifies the requirements for migrating Neo Alexandria 2.0 from SQLite to PostgreSQL as the primary production database. The migration addresses scalability, concurrency, and performance limitations inherent in SQLite while maintaining backward compatibility for development environments. The system currently uses SQLite for both development and production, with connection pooling configured for 60 concurrent connections (20 base + 40 overflow). PostgreSQL will provide superior concurrent write performance, advanced indexing capabilities, and production-grade reliability while preserving the existing data model and API contracts.
+This document specifies the requirements for migrating Pharos from SQLite to PostgreSQL as the primary production database. The migration addresses scalability, concurrency, and performance limitations inherent in SQLite while maintaining backward compatibility for development environments. The system currently uses SQLite for both development and production, with connection pooling configured for 60 concurrent connections (20 base + 40 overflow). PostgreSQL will provide superior concurrent write performance, advanced indexing capabilities, and production-grade reliability while preserving the existing data model and API contracts.
 
 ## Glossary
 

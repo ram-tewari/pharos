@@ -1,6 +1,6 @@
 # MCP Integration Guide
 
-How to integrate with the Model Context Protocol (MCP) server in Neo Alexandria 2.0.
+How to integrate with the Model Context Protocol (MCP) server in Pharos.
 
 > **Phase**: 20 - Frontend-Backend Infrastructure Support
 > **Status**: Complete

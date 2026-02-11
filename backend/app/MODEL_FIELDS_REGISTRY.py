@@ -62,12 +62,12 @@ MODEL_FIELDS = {
         "ingestion_error",
         "ingestion_started_at",
         "ingestion_completed_at",
-        # Vector embedding for Phase 4 hybrid search
+        # Vector embedding for hybrid search
         "embedding",
         "sparse_embedding",
         "sparse_embedding_model",
         "sparse_embedding_updated_at",
-        # Phase 6.5: Scholarly Metadata Fields
+        # Scholarly Metadata Fields
         "authors",
         "affiliations",
         "doi",

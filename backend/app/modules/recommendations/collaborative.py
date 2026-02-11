@@ -1,5 +1,5 @@
 """
-Collaborative Filtering Service for Phase 11 Hybrid Recommendation Engine.
+Collaborative Filtering Service for Hybrid Recommendation Engine.
 
 This service implements Neural Collaborative Filtering (NCF) using PyTorch.
 The NCF model learns user-item interactions from implicit feedback signals

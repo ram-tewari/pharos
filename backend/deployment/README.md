@@ -1,6 +1,6 @@
 # Deployment Configuration
 
-This directory contains all deployment-related files for Neo Alexandria 2.0.
+This directory contains all deployment-related files for Pharos.
 
 ## Contents
 

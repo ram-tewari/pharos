@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Taxonomy module provides ML-based classification and taxonomy management for Neo Alexandria 2.0. It enables automatic resource classification, hierarchical taxonomy tree management, and active learning capabilities to improve classification accuracy over time.
+The Taxonomy module provides ML-based classification and taxonomy management for Pharos. It enables automatic resource classification, hierarchical taxonomy tree management, and active learning capabilities to improve classification accuracy over time.
 
 ## Features
 

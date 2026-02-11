@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design document describes the approach for migrating Neo Alexandria 2.0's monolithic documentation into a modular, topic-focused structure. The migration transforms three large source files (~140KB total) into 20+ focused destination files organized by domain.
+This design document describes the approach for migrating Pharos's monolithic documentation into a modular, topic-focused structure. The migration transforms three large source files (~140KB total) into 20+ focused destination files organized by domain.
 
 ## Architecture
 

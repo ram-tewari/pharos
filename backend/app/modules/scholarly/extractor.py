@@ -1,5 +1,5 @@
 """
-Neo Alexandria 2.0 - Phase 6.5: Advanced Metadata Extraction
+Neo Alexandria 2.0 - Advanced Metadata Extraction
 
 This module implements comprehensive scholarly metadata extraction for academic papers,
 including authors, DOIs, equations, tables, figures, and OCR processing.

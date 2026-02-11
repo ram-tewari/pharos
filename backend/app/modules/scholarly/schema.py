@@ -1,7 +1,7 @@
 """
 Neo Alexandria 2.0 - Scholarly Metadata Schemas
 
-Pydantic schemas for Phase 6.5 scholarly metadata API endpoints.
+Pydantic schemas for scholarly metadata API endpoints.
 """
 
 from pydantic import BaseModel, Field

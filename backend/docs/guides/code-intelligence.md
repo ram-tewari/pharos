@@ -1,6 +1,6 @@
 # Code Intelligence Guide
 
-How to use hover information and code navigation features in Neo Alexandria 2.0.
+How to use hover information and code navigation features in Pharos.
 
 > **Phase**: 20 - Frontend-Backend Infrastructure Support
 > **Status**: Complete

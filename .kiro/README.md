@@ -42,7 +42,7 @@ Project-level context and guidelines for AI agents and developers.
 
 ## Specifications
 
-Neo Alexandria 2.0 uses **Spec-Driven Development** for complex features.
+Pharos uses **Spec-Driven Development** for complex features.
 
 ### What is a Spec?
 

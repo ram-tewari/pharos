@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class ProcessingStage(str, Enum):
     """Processing stages for resource ingestion pipeline.
 
-    Each stage represents a distinct phase of resource processing:
+    Each stage represents a distinct step of resource processing:
     - INGESTION: Initial resource creation and metadata extraction
     - QUALITY: Quality assessment and scoring
     - TAXONOMY: ML-based classification and tagging

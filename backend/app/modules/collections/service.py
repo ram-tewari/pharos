@@ -570,11 +570,20 @@ class CollectionService:
 
             return None
 
-        # Extract embeddings
+        # Extract embeddings - handle both JSON strings (SQLite/Text) and lists (PostgreSQL/JSON)
+        import json
         embeddings = []
         for resource in resources:
-            if resource.embedding and isinstance(resource.embedding, list):
-                embeddings.append(resource.embedding)
+            embedding = resource.embedding
+            if embedding:
+                # If stored as JSON string, parse it
+                if isinstance(embedding, str):
+                    try:
+                        embedding = json.loads(embedding)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+                if isinstance(embedding, list):
+                    embeddings.append(embedding)
 
         if not embeddings:
             return None
@@ -658,13 +667,25 @@ class CollectionService:
 
         resources = query.all()
 
-        # Compute similarities
+        # Compute similarities - handle embeddings as either JSON strings or lists
+        import json
         similarities = []
         for resource in resources:
-            if not resource.embedding or not isinstance(resource.embedding, list):
+            embedding = resource.embedding
+            if not embedding:
+                continue
+            
+            # Parse JSON string if needed
+            if isinstance(embedding, str):
+                try:
+                    embedding = json.loads(embedding)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+            
+            if not isinstance(embedding, list):
                 continue
 
-            resource_embedding = np.array(resource.embedding)
+            resource_embedding = np.array(embedding)
 
             # Cosine similarity
             similarity = float(np.dot(collection_embedding, resource_embedding))

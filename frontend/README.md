@@ -1,6 +1,10 @@
-# Neo Alexandria 2.0 - Frontend
+# Pharos - Frontend
 
-React-based single-page application (SPA) for Neo Alexandria 2.0, an advanced knowledge management system.
+![React](https://img.shields.io/badge/React-18-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Vite](https://img.shields.io/badge/Vite-5-purple)
+
+Your second brain for code. React-based single-page application for Pharos, an AI-powered knowledge management system designed for developers and researchers.
 
 ## Tech Stack
 

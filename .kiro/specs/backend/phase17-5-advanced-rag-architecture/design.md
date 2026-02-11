@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design document specifies the technical architecture for upgrading Neo Alexandria 2.0 from Naive RAG to advanced RAG patterns. The upgrade introduces four key capabilities:
+This design document specifies the technical architecture for upgrading Pharos from Naive RAG to advanced RAG patterns. The upgrade introduces four key capabilities:
 
 1. **Parent-Child Chunking**: Decouple retrieval units (small chunks) from generation units (full resources)
 2. **GraphRAG**: Semantic triple storage for graph-enhanced retrieval

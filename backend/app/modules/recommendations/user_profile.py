@@ -1,5 +1,5 @@
 """
-User Profile Service for Phase 11 Hybrid Recommendation Engine.
+User Profile Service for Hybrid Recommendation Engine.
 
 This service manages user profiles, tracks interactions, generates user embeddings,
 and learns user preferences from interaction history.

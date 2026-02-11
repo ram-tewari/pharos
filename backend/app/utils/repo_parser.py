@@ -1,5 +1,5 @@
 """
-Repository Parser for Phase 19 - Hybrid Edge-Cloud Orchestration.
+Repository Parser for Hybrid Edge-Cloud Orchestration.
 
 This module provides functionality to clone Git repositories, parse source files,
 extract import statements, and build dependency graphs for neural graph learning.

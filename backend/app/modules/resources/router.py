@@ -530,7 +530,7 @@ async def classify_resource_override(
 
 
 # ============================================================================
-# CHUNKING ENDPOINTS (Phase 17.5 - Advanced RAG)
+# CHUNKING ENDPOINTS (Advanced RAG)
 # ============================================================================
 
 
@@ -840,7 +840,7 @@ async def get_chunk(
 
 
 # ============================================================================
-# REPOSITORY INGESTION ENDPOINTS (Phase 18 - Code Intelligence)
+# REPOSITORY INGESTION ENDPOINTS (Code Intelligence)
 # ============================================================================
 
 
@@ -1009,7 +1009,7 @@ async def get_ingestion_status(
 
 
 # ============================================================================
-# Auto-Linking Endpoints - Phase 20
+# Auto-Linking Endpoints
 # ============================================================================
 
 

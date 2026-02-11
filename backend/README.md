@@ -56,99 +56,58 @@ Pharos is a production-ready knowledge management API designed specifically for 
 
 ## Key Features
 
-### Authentication and Security
+### Code Intelligence & Repository Analysis
+- **AST-Based Parsing**: Understand code structure through Tree-Sitter parsing (Python, JavaScript, TypeScript, Rust, Go, Java)
+- **Dependency Extraction**: Automatically build IMPORTS, DEFINES, and CALLS relationship graphs
+- **Repository Ingestion**: Analyze entire codebases from local directories or Git URLs (HTTPS/SSH)
+- **Smart Filtering**: Respects .gitignore, excludes binaries, focuses on source code
+- **Performance**: Sub-2s per file parsing (P95), handles repositories with 10K+ files
+- **Static Analysis**: Safe code understanding without execution
+
+### Semantic Search & Discovery
+- **Hybrid Search**: Configurable weighting between keyword, semantic, and code-specific search
+- **Vector Embeddings**: Semantic similarity using nomic-embed-text-v1 for code and documentation
+- **Full-Text Search**: SQLite FTS5 with PostgreSQL fallback for fast keyword matching
+- **Code Search**: Find functions, classes, and patterns across repositories
+- **Faceted Filtering**: Filter by language, quality, classification, and file type
+- **GraphRAG Retrieval**: Entity-based graph traversal for context-aware search
+
+### Knowledge Graph & Relationships
+- **Code Dependency Graphs**: Visualize how functions, classes, and modules connect
+- **Citation Networks**: Automatic extraction and resolution from papers and documentation
+- **PageRank Scoring**: Compute importance of code modules and research papers
+- **Entity Relationships**: Semantic triple storage linking concepts, code, and papers
+- **Contradiction Detection**: Identify conflicting information across documentation
+- **Graph Visualization**: Interactive mind-map and network views
+
+### Research Paper Integration
+- **Multi-Format Ingestion**: HTML, PDF, Markdown, and plain text
+- **Scholarly Metadata**: Automatic extraction of equations, tables, citations, and references
+- **Quality Assessment**: Multi-dimensional scoring (completeness, accuracy, relevance, clarity)
+- **Citation Resolution**: Link papers to existing resources in your library
+- **Academic Classification**: Automatic categorization using ML models
+
+### Active Reading & Annotation
+- **Precise Highlighting**: Character-offset-based text selection in code and documents
+- **Rich Notes**: Personal annotations with semantic embeddings for intelligent search
+- **Tag Organization**: Custom tags with color-coding for categorization
+- **Semantic Search**: Find conceptually related annotations across your entire knowledge base
+- **Code Context**: Annotations preserve surrounding code context
+- **Export**: Markdown and JSON formats for integration with other tools
+
+### Authentication & Security
 - **JWT Authentication**: Secure token-based authentication with access and refresh tokens
 - **OAuth2 Integration**: Social login via Google and GitHub
 - **Tiered Rate Limiting**: Free (100/hr), Premium (1,000/hr), and Admin (10,000/hr) tiers
 - **Token Revocation**: Redis-backed token blacklist for secure logout
 - **Password Security**: Bcrypt password hashing with automatic salt generation
-- **User Management**: User registration, authentication, and profile management
 
-### Content Ingestion and Processing
-- **Asynchronous URL Ingestion**: Submit web content for intelligent processing
-- **AI-Powered Analysis**: Automatic summarization, tagging, and classification
-- **Multi-Format Support**: HTML, PDF, and plain text content extraction
-- **Quality Assessment**: Comprehensive content quality scoring and evaluation
-
-### Advanced Search and Discovery
-- **Hybrid Search**: Combines keyword and semantic search with configurable weighting
-- **Vector Embeddings**: Semantic similarity search using state-of-the-art embedding models
-- **Advanced RAG**: Parent-child chunking, GraphRAG retrieval, and question-based search
-- **Faceted Search**: Advanced filtering by classification, language, quality, and subjects
-- **Full-Text Search**: SQLite FTS5 integration with graceful fallbacks
-
-### Advanced RAG Architecture
-- **Parent-Child Chunking**: Split documents into searchable chunks while maintaining parent context
-- **GraphRAG Retrieval**: Entity extraction, graph traversal, and chunk retrieval
-- **Synthetic Questions**: Reverse HyDE retrieval using generated questions
-- **Knowledge Graph**: Semantic triple storage with provenance tracking
-- **Contradiction Discovery**: Identify conflicting information across resources
-- **RAG Evaluation**: RAGAS metrics for faithfulness, relevance, and precision
-- **Migration Tools**: Batch migration script for existing resources
-
-### Code Intelligence Pipeline
-- **Repository Ingestion**: Scan local directories or clone Git repositories (HTTPS/SSH)
-- **AST-Based Chunking**: Parse code into logical units (functions, classes, methods) using Tree-Sitter
-- **Multi-Language Support**: Python, JavaScript, TypeScript, Rust, Go, and Java
-- **Static Analysis**: Extract imports, definitions, and function calls without code execution
-- **Code Graph**: Build dependency graphs with IMPORTS, DEFINES, and CALLS relationships
-- **Gitignore Support**: Automatically respect .gitignore patterns during ingestion
-- **Binary Detection**: Exclude binary files from analysis
-- **File Classification**: Automatic categorization (PRACTICE, THEORY, GOVERNANCE)
-- **Performance**: <2s per file for AST parsing, <1s for static analysis (P95)
-
-### Knowledge Graph and Relationships
-- **Hybrid Graph Scoring**: Multi-signal relationship detection combining vector similarity, shared subjects, and classification matches
-- **Mind-Map Visualization**: Resource-centric neighbor discovery for exploration
-- **Global Overview**: System-wide relationship analysis and connection mapping
-
-### Citation Network & Link Intelligence
-- **Multi-Format Citation Extraction**: Automatically extract citations from HTML, PDF, and Markdown content
-- **Internal Citation Resolution**: Link citations to existing resources in your library
-- **PageRank Importance Scoring**: Compute citation importance using network analysis
-- **Citation Graph Visualization**: Build and explore citation networks with configurable depth
-- **Smart Citation Classification**: Automatically categorize citations as datasets, code, references, or general links
-
-### Personalized Recommendations
-- **Content-Based Filtering**: Learn user preferences from existing library content
-- **Fresh Content Discovery**: Source and rank new content from external providers
-- **Explainable Recommendations**: Provide reasoning for recommendation decisions
-
-### Collection Management
-- **Curated Collections**: Organize resources into named, thematic collections with descriptions
-- **Hierarchical Organization**: Create nested collections for complex topic structures
-- **Visibility Controls**: Set collections as private, shared, or public for flexible collaboration
-- **Aggregate Embeddings**: Automatic semantic representation computed from member resources
-- **Collection Recommendations**: Discover similar resources and collections based on semantic similarity
-- **Batch Operations**: Add or remove up to 100 resources in a single request
-- **Automatic Cleanup**: Collections update automatically when resources are deleted
-- **Access Control**: Owner-based permissions with visibility-based read access
-
-### Annotation & Active Reading System
-- **Precise Text Highlighting**: Character-offset-based text selection with context preservation
-- **Rich Note-Taking**: Add personal notes to highlights with automatic semantic embedding
-- **Tag Organization**: Categorize annotations with custom tags and color-coding
-- **Full-Text Search**: Search across all annotation notes and highlighted text (<100ms for 10K annotations)
-- **Semantic Search**: Find conceptually related annotations using AI-powered similarity
-- **Export Capabilities**: Export annotations to Markdown or JSON for external tools
-- **Collection Integration**: Associate annotations with research collections
-- **Privacy Controls**: Annotations are private by default with optional sharing
-
-### Authority Control and Classification
-- **Subject Normalization**: Intelligent tag standardization and canonical forms
-- **Hierarchical Classification**: UDC-inspired classification system with automatic assignment
-- **Usage Tracking**: Monitor and optimize metadata usage patterns
-
-### ML-Powered Classification & Taxonomy
-- **Transformer-Based Classification**: Fine-tuned BERT/DistilBERT models for accurate resource categorization
-- **Hierarchical Taxonomy Management**: Create and manage multi-level category trees with parent-child relationships
-- **Multi-Label Classification**: Resources can belong to multiple categories with confidence scores
-- **Semi-Supervised Learning**: Train effective models with minimal labeled data (<500 examples)
-- **Active Learning**: System identifies uncertain predictions for targeted human review
-- **Confidence Scoring**: Every classification includes a confidence score (0.0-1.0) for transparency
+### ML-Powered Features
+- **Transformer-Based Classification**: Fine-tuned BERT/DistilBERT models for categorization
+- **Hierarchical Taxonomy**: Multi-level category trees with parent-child relationships
+- **Active Learning**: System identifies uncertain predictions for targeted review
 - **Model Versioning**: Track and manage multiple model versions with rollback capability
 - **GPU Acceleration**: Automatic GPU utilization with graceful CPU fallback
-- **Continuous Improvement**: Models improve automatically through human feedback loops
 
 ## Architecture
 
@@ -761,7 +720,7 @@ We welcome contributions! Here's how to get started:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
 
 ## Acknowledgments
 

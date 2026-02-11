@@ -1,12 +1,27 @@
-# Backend Documentation Index
+# Pharos Backend Documentation
+
+**Your second brain for code** - AI-powered knowledge management API for developers and researchers.
+
+## What is Pharos?
+
+Pharos is a production-ready knowledge management system designed specifically for developers. It understands code repositories at a structural level through AST-based analysis, integrates research papers and technical documentation, and provides semantic search across your entire technical knowledge base.
+
+**Key Capabilities:**
+- **Code Intelligence**: Parse and analyze Python, JavaScript, TypeScript, Rust, Go, and Java repositories
+- **Semantic Search**: Find code and documentation by meaning, not just keywords
+- **Knowledge Graphs**: Connect code, papers, and concepts through citation networks and dependencies
+- **Active Reading**: Annotate code and papers with searchable highlights and notes
+- **Research Integration**: Manage academic papers alongside code with automatic metadata extraction
 
 ## Quick Navigation
 
 | Need | Read |
 |------|------|
+| Get started quickly | [Quick Start Guide](guides/QUICK_START.md) |
 | API endpoints | [API Reference](api/) |
 | System architecture | [Architecture](architecture/) |
 | Development setup | [Developer Guides](guides/) |
+| Code ingestion | [Code Intelligence Guide](guides/code-ingestion.md) |
 | Database info | [Architecture: Database](architecture/database.md) |
 | Testing | [Guides: Testing](guides/testing.md) |
 
@@ -49,21 +64,30 @@ backend/docs/
 
 Complete REST API documentation organized by module:
 
+**Core Features:**
 - [API Overview](api/overview.md) - Authentication, errors, pagination, module architecture
-- [Authentication API](api/auth.md) - JWT authentication, OAuth2, rate limiting (Phase 17)
-- [Ingestion API](api/ingestion.md) - Repository ingestion and processing (Phase 19)
+- [Authentication API](api/auth.md) - JWT authentication, OAuth2, rate limiting
 - [Resources API](api/resources.md) - Content management and ingestion
-- [Search API](api/search.md) - Hybrid search, three-way fusion
-- [Collections API](api/collections.md) - Collection management
-- [Annotations API](api/annotations.md) - Text highlighting and notes
-- [Taxonomy API](api/taxonomy.md) - Classification and ML
-- [Graph API](api/graph.md) - Knowledge graph and citations
-- [Recommendations API](api/recommendations.md) - Personalized content
-- [Quality API](api/quality.md) - Quality assessment
-- [Scholarly API](api/scholarly.md) - Academic metadata extraction
-- [Authority API](api/authority.md) - Subject authority and classification
+
+**Code Intelligence:**
+- [Ingestion API](api/ingestion.md) - Repository ingestion and AST-based code analysis
+- [Search API](api/search.md) - Hybrid search (keyword + semantic + code)
+- [Graph API](api/graph.md) - Code dependencies, citation networks, knowledge graphs
+
+**Organization & Discovery:**
+- [Collections API](api/collections.md) - Organize code and papers into collections
+- [Annotations API](api/annotations.md) - Highlight and annotate code/papers
+- [Taxonomy API](api/taxonomy.md) - ML-based classification
+- [Recommendations API](api/recommendations.md) - Personalized content discovery
+
+**Quality & Metadata:**
+- [Quality API](api/quality.md) - Multi-dimensional quality assessment
+- [Scholarly API](api/scholarly.md) - Academic metadata extraction (equations, tables, citations)
+- [Authority API](api/authority.md) - Subject authority and normalization
 - [Curation API](api/curation.md) - Content review and batch operations
-- [Monitoring API](api/monitoring.md) - Health checks and metrics
+
+**System:**
+- [Monitoring API](api/monitoring.md) - Health checks, metrics, and observability
 
 ## Architecture
 
@@ -80,12 +104,24 @@ System design and technical decisions:
 
 Getting started and development workflows:
 
-- [Setup Guide](guides/setup.md) - Installation and environment setup
-- [Deployment Guide](guides/deployment.md) - Docker deployment and Swagger testing
+**Getting Started:**
+- [Quick Start Guide](guides/QUICK_START.md) - Get up and running in 5 minutes
+- [Setup Guide](guides/setup.md) - Detailed installation and environment setup
+- [Deployment Guide](guides/deployment.md) - Docker deployment and production setup
+
+**Code Intelligence:**
+- [Code Ingestion Guide](guides/code-ingestion.md) - Ingest and analyze code repositories
+- [Code Intelligence Guide](guides/code-intelligence.md) - AST-based code understanding
+
+**Development:**
 - [Development Workflows](guides/workflows.md) - Common development tasks
 - [Testing Guide](guides/testing.md) - Testing strategies and patterns
 - [Troubleshooting](guides/troubleshooting.md) - Common issues and solutions
-- [Code Ingestion Guide](guides/code-ingestion.md) - Repository analysis and code intelligence
+
+**Advanced Features:**
+- [Advanced RAG Guide](guides/advanced-rag.md) - Parent-child chunking and GraphRAG
+- [Graph Intelligence Guide](guides/graph-intelligence.md) - Knowledge graph features
+- [Document Intelligence Guide](guides/document-intelligence.md) - PDF and document processing
 
 ### Phase 19: Hybrid Edge-Cloud Architecture
 

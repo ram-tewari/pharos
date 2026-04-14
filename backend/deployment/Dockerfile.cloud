@@ -24,6 +24,9 @@ COPY app ./app
 COPY alembic ./alembic
 COPY config/alembic.ini ./alembic.ini
 
+# Fix alembic script_location path for Docker
+RUN sed -i 's|script_location = %(here)s/../alembic|script_location = /app/alembic|g' alembic.ini
+
 # Create necessary directories
 RUN mkdir -p /app/storage /app/logs
 

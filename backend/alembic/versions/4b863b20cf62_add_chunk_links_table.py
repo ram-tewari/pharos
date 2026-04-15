@@ -21,12 +21,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+    import uuid
+
+    # Determine UUID type based on dialect
+    bind = op.get_bind()
+    if bind.dialect.name == "postgresql":
+        uuid_type = PG_UUID(as_uuid=True)
+    else:
+        uuid_type = sa.CHAR(36)
+
     # Create chunk_links table
     op.create_table(
         "chunk_links",
-        sa.Column("id", sa.String(length=36), nullable=False),
-        sa.Column("source_chunk_id", sa.String(length=36), nullable=False),
-        sa.Column("target_chunk_id", sa.String(length=36), nullable=False),
+        sa.Column("id", uuid_type, nullable=False, default=uuid.uuid4),
+        sa.Column("source_chunk_id", uuid_type, nullable=False),
+        sa.Column("target_chunk_id", uuid_type, nullable=False),
         sa.Column("similarity_score", sa.Float(), nullable=False),
         sa.Column("link_type", sa.String(length=50), nullable=False),
         sa.Column(

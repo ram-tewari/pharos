@@ -36,12 +36,26 @@ def upgrade() -> None:
         # Enable the pgvector extension (idempotent)
         op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
-        # HNSW index for fast approximate nearest-neighbour search on embeddings.
-        # vector_cosine_ops matches the cosine similarity used in semantic search queries.
-        op.execute(
-            "CREATE INDEX IF NOT EXISTS idx_resources_embedding_hnsw "
-            "ON resources USING hnsw (embedding vector_cosine_ops);"
-        )
+        # Check if embedding column is vector type before creating HNSW index
+        # This migration might run before the pgvector conversion migration
+        result = bind.execute(sa.text("""
+            SELECT data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'resources' 
+            AND column_name = 'embedding'
+        """))
+        row = result.fetchone()
+        
+        if row and row[0] == 'USER-DEFINED':  # pgvector type shows as USER-DEFINED
+            # HNSW index for fast approximate nearest-neighbour search on embeddings.
+            # vector_cosine_ops matches the cosine similarity used in semantic search queries.
+            op.execute(
+                "CREATE INDEX IF NOT EXISTS idx_resources_embedding_hnsw "
+                "ON resources USING hnsw (embedding vector_cosine_ops);"
+            )
+        else:
+            # Skip HNSW index creation - embedding column is not vector type yet
+            print("Skipping HNSW index creation: embedding column is not vector type yet")
     
     # B-tree indexes for equality / range filters (work on both SQLite and PostgreSQL)
     op.execute(

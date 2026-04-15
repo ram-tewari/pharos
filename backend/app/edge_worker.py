@@ -62,7 +62,7 @@ def check_environment():
         logger.error(f"MODE must be 'EDGE' for edge worker, got: {mode}")
         sys.exit(1)
 
-    logger.info("✓ Environment variables validated")
+    logger.info("Environment variables validated")
 
 
 def check_gpu():
@@ -75,7 +75,7 @@ def check_gpu():
             device_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
             cuda_version = torch.version.cuda
 
-            logger.info("🔥 GPU Detected:")
+            logger.info("GPU Detected:")
             logger.info(f"   Device: {device_name}")
             logger.info(f"   Memory: {device_memory:.1f} GB")
             logger.info(f"   CUDA Version: {cuda_version}")
@@ -83,13 +83,13 @@ def check_gpu():
 
             return "cuda"
         else:
-            logger.warning("⚠️  CUDA not available, falling back to CPU")
+            logger.warning("CUDA not available, falling back to CPU")
             logger.warning(
                 "   This will be slower. Check NVIDIA drivers and CUDA installation."
             )
             return "cpu"
     except ImportError:
-        logger.error("❌ PyTorch not installed!")
+        logger.error("PyTorch not installed!")
         logger.error("   Install with: pip install -r requirements-edge.txt")
         sys.exit(1)
 
@@ -105,13 +105,13 @@ def load_embedding_model():
         embedding_service = EmbeddingService()
         if embedding_service.warmup():
             elapsed = time.time() - start_time
-            logger.info(f"✓ Embedding model loaded successfully ({elapsed:.1f}s)")
+            logger.info(f"Embedding model loaded successfully ({elapsed:.1f}s)")
             return embedding_service
         else:
-            logger.error("❌ Embedding model warmup failed")
+            logger.error("Embedding model warmup failed")
             sys.exit(1)
     except Exception as e:
-        logger.error(f"❌ Failed to load embedding model: {e}", exc_info=True)
+        logger.error(f"Failed to load embedding model: {e}", exc_info=True)
         sys.exit(1)
 
 
@@ -125,10 +125,10 @@ async def connect_to_redis():
         redis_client = UpstashRedisClient()
         # Test connection
         await redis_client.ping()
-        logger.info("✓ Connected to Upstash Redis")
+        logger.info("Connected to Upstash Redis")
         return redis_client
     except Exception as e:
-        logger.error(f"❌ Failed to connect to Upstash Redis: {e}", exc_info=True)
+        logger.error(f"Failed to connect to Upstash Redis: {e}", exc_info=True)
         sys.exit(1)
 
 
@@ -147,12 +147,12 @@ async def connect_to_database():
         # Test connection
         async for session in get_async_session():
             await session.execute("SELECT 1")
-            logger.info("✓ Connected to database")
+            logger.info("Connected to database")
             break
 
         return get_async_session
     except Exception as e:
-        logger.error(f"❌ Failed to connect to database: {e}", exc_info=True)
+        logger.error(f"Failed to connect to database: {e}", exc_info=True)
         sys.exit(1)
 
 
@@ -175,7 +175,7 @@ async def process_task(task: dict, embedding_service, db_session_factory):
             return False
 
         logger.info(
-            f"✓ Generated embedding ({len(embedding)} dims) in {elapsed*1000:.0f}ms"
+            f"Generated embedding ({len(embedding)} dims) in {elapsed*1000:.0f}ms"
         )
 
         # Store in database
@@ -188,7 +188,7 @@ async def process_task(task: dict, embedding_service, db_session_factory):
                 if resource:
                     resource.embedding = embedding
                     await session.commit()
-                    logger.info(f"✓ Stored embedding for resource {resource_id}")
+                    logger.info(f"Stored embedding for resource {resource_id}")
                     return True
                 else:
                     logger.error(f"Resource {resource_id} not found")
@@ -224,7 +224,7 @@ async def poll_and_process(redis_client, embedding_service, db_session_factory):
             task = await redis_client.pop_task()
 
             if task:
-                logger.info(f"📥 Received task: {task.get('task_id')}")
+                logger.info(f"Received task: {task.get('task_id')}")
 
                 # Process task
                 success = await process_task(task, embedding_service, db_session_factory)
@@ -232,7 +232,7 @@ async def poll_and_process(redis_client, embedding_service, db_session_factory):
                 if success:
                     tasks_processed += 1
                     logger.info(
-                        f"✅ Task completed (total: {tasks_processed} processed, {tasks_failed} failed)"
+                        f"Task completed (total: {tasks_processed} processed, {tasks_failed} failed)"
                     )
 
                     # Update task status in Redis
@@ -242,7 +242,7 @@ async def poll_and_process(redis_client, embedding_service, db_session_factory):
                 else:
                     tasks_failed += 1
                     logger.error(
-                        f"❌ Task failed (total: {tasks_processed} processed, {tasks_failed} failed)"
+                        f"Task failed (total: {tasks_processed} processed, {tasks_failed} failed)"
                     )
 
                     # Update task status in Redis
@@ -284,7 +284,7 @@ async def main():
     db_session_factory = await connect_to_database()
 
     logger.info("=" * 60)
-    logger.info("✓ Edge worker ready - waiting for tasks...")
+    logger.info("Edge worker ready - waiting for tasks...")
     logger.info("=" * 60)
 
     # 6. Start polling and processing

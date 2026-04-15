@@ -1,6 +1,24 @@
 # Pharos Edge Worker Startup Script (PowerShell)
 # This script starts the edge worker with proper environment configuration
 
+# Check if running as administrator
+$isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+if (-not $isAdmin) {
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host "Administrator Privileges Required" -ForegroundColor Yellow
+    Write-Host "========================================" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "The edge worker needs administrator privileges to access the GPU." -ForegroundColor Yellow
+    Write-Host "Restarting with administrator privileges..." -ForegroundColor Yellow
+    Write-Host ""
+    
+    # Restart script as administrator
+    $scriptPath = $MyInvocation.MyCommand.Path
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`"" -Verb RunAs
+    exit
+}
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Pharos Edge Worker - Startup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan

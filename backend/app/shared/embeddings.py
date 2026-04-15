@@ -57,6 +57,13 @@ class EmbeddingGenerator:
         if self._model is None:
             with self._model_lock:
                 if self._model is None:  # Double-check locking pattern
+                    # Check if running in CLOUD mode - skip model loading
+                    import os
+                    deployment_mode = os.getenv("MODE", "EDGE")
+                    if deployment_mode == "CLOUD":
+                        logger.info("Cloud mode detected - skipping embedding model load (handled by edge worker)")
+                        return
+                    
                     if SentenceTransformer is None:  # pragma: no cover
                         # Leave model as None; caller will use fallback
                         return

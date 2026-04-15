@@ -260,21 +260,28 @@ async def lifespan(app: FastAPI):
             "Test mode detected - skipping heavy initialization (embedding warmup, Redis)"
         )
     else:
-        # Warmup embedding model to avoid cold start latency
-        try:
-            from .shared.embeddings import EmbeddingService
-
-            embedding_service = EmbeddingService()
-            if embedding_service.warmup():
-                logger.info("✓ Embedding model warmed up successfully")
-            else:
-                logger.warning(
-                    "⚠ Embedding model warmup failed - first encoding may be slow"
-                )
-        except Exception as e:
-            logger.warning(
-                f"Embedding model warmup failed: {e} - first encoding may be slow"
+        # Skip embedding model warmup in CLOUD mode (handled by edge worker)
+        deployment_mode = settings.MODE
+        if deployment_mode == "CLOUD":
+            logger.info(
+                "✓ Cloud mode detected - skipping embedding model warmup (handled by edge worker)"
             )
+        else:
+            # Warmup embedding model to avoid cold start latency (EDGE mode only)
+            try:
+                from .shared.embeddings import EmbeddingService
+
+                embedding_service = EmbeddingService()
+                if embedding_service.warmup():
+                    logger.info("✓ Embedding model warmed up successfully")
+                else:
+                    logger.warning(
+                        "⚠ Embedding model warmup failed - first encoding may be slow"
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Embedding model warmup failed: {e} - first encoding may be slow"
+                )
 
         # Initialize Redis cache connection
         try:

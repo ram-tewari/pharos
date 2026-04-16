@@ -82,7 +82,7 @@ def register_all_modules(app: FastAPI) -> None:
             "app.modules.graph",
             ["graph_router", "citations_router", "discovery_router"],
         ),
-        # ("auth", "app.modules.auth", ["router"]),  # Temporarily disabled due to import errors
+        ("auth", "app.modules.auth", ["router"]),  # Re-enabled after fixing imports
     ]
 
     # Additional routers for Phase 19/21.5 fixes (registered separately with their own prefixes)

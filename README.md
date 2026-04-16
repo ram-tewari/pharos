@@ -273,24 +273,32 @@ curl -X GET "http://127.0.0.1:8000/graph/citations/1?depth=2"
 
 ## Documentation
 
-Comprehensive documentation is organized by audience and purpose:
+📖 **[Complete Documentation Index](docs/README.md)** - Start here for all documentation
 
-### For Users
+### Quick Links
+
+**Getting Started**:
 - [Product Vision](.kiro/steering/product.md) - What we're building and why
 - [Quick Start Guide](backend/docs/guides/QUICK_START.md) - Get up and running in 5 minutes
 - [API Reference](backend/docs/index.md) - Complete endpoint documentation
 
-### For Developers
+**Development**:
 - [Tech Stack](.kiro/steering/tech.md) - Technologies and tools
 - [Repository Structure](.kiro/steering/structure.md) - Where things are located
 - [Developer Setup](backend/docs/guides/setup.md) - Detailed installation guide
 - [Architecture Overview](backend/docs/architecture/overview.md) - System design
 - [Testing Guide](backend/docs/guides/testing.md) - Testing strategies
 
-### For DevOps
-- [Deployment Guide](backend/docs/guides/deployment.md) - Production deployment
+**Deployment**:
+- [Deploy Now](backend/docs/deployment/DEPLOY_NOW.md) - Quick deployment (30 min)
+- [Render Free Tier](backend/RENDER_FREE_DEPLOYMENT.md) - Free tier deployment guide
+- [Pre-Flight Checklist](backend/docs/deployment/PRE_FLIGHT_CHECKLIST.md) - Deployment verification
 - [Docker Setup](backend/docs/guides/DOCKER_SETUP_GUIDE.md) - Container orchestration
-- [Phase 19 Deployment](backend/docs/guides/phase19-deployment.md) - Hybrid edge-cloud
+
+**Vision & Roadmap**:
+- [Pharos + Ronin Vision](docs/vision/PHAROS_RONIN_VISION.md) - Complete technical vision
+- [Quick Reference](.kiro/steering/PHAROS_RONIN_QUICK_REFERENCE.md) - Quick reference card
+- [Future Steps](docs/PHAROS_future_steps.md) - Development roadmap
 
 ## Project Structure
 

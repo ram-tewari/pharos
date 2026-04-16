@@ -240,19 +240,25 @@ def create_database_engine(
             # Detect if using NeonDB (serverless PostgreSQL)
             is_neondb = "neon.tech" in database_url or "neon.db" in database_url
             
-            connect_args = {
-                # Statement Timeout: Prevent runaway queries
-                "options": f"-c statement_timeout={statement_timeout}",  # Milliseconds
-                
-                # Connection Timeout: Allow time for serverless database wake-up
-                "connect_timeout": 60,  # 60 seconds (handles Render/NeonDB cold start)
-                
-                # Keepalive: Detect dropped connections
-                "keepalives": 1,  # Enable TCP keepalive
-                "keepalives_idle": 30,  # Start keepalive after 30s idle
-                "keepalives_interval": 10,  # Keepalive probe interval
-                "keepalives_count": 5,  # Number of keepalive probes
-            }
+            # Detect if using NeonDB pooled connection (doesn't support statement_timeout in options)
+            is_neondb_pooled = "pooler" in database_url and is_neondb
+            
+            connect_args = {}
+            
+            # Statement Timeout: Prevent runaway queries
+            # NOTE: NeonDB pooled connections don't support statement_timeout in options
+            # Use unpooled connection or set via SQL after connection
+            if not is_neondb_pooled:
+                connect_args["options"] = f"-c statement_timeout={statement_timeout}"  # Milliseconds
+            
+            # Connection Timeout: Allow time for serverless database wake-up
+            connect_args["connect_timeout"] = 60  # 60 seconds (handles Render/NeonDB cold start)
+            
+            # Keepalive: Detect dropped connections
+            connect_args["keepalives"] = 1  # Enable TCP keepalive
+            connect_args["keepalives_idle"] = 30  # Start keepalive after 30s idle
+            connect_args["keepalives_interval"] = 10  # Keepalive probe interval
+            connect_args["keepalives_count"] = 5  # Number of keepalive probes
             
             # SSL Configuration
             if is_neondb:

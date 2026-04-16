@@ -30,7 +30,8 @@ from ...database.models import (
     GraphEntity,
     GraphRelationship,
 )
-from ...shared.embeddings import EmbeddingService
+# Lazy import embeddings to avoid loading models in CLOUD mode
+# from ...shared.embeddings import EmbeddingService
 from ...shared.event_bus import event_bus
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ class PDFIngestionService:
     - GraphRAG linking between PDF concepts and code
     """
 
-    def __init__(self, db: AsyncSession, embedding_service: EmbeddingService):
+    def __init__(self, db: AsyncSession, embedding_service: "EmbeddingService"):  # type: ignore
         self.db = db
         self.embedding_service = embedding_service
 

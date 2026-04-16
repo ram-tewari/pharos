@@ -305,9 +305,18 @@ if PYBREAKER_AVAILABLE:
     oauth_google_breaker = CircuitBreakerFactory.get_oauth_breaker("google")
     oauth_github_breaker = CircuitBreakerFactory.get_oauth_breaker("github")
 
-    # AI/ML services
-    ai_embedding_breaker = CircuitBreakerFactory.get_ai_breaker("embedding")
-    ai_llm_breaker = CircuitBreakerFactory.get_ai_breaker("llm")
+    # AI/ML services - only create in EDGE mode
+    import os
+    deployment_mode = os.getenv("MODE", "EDGE")
+    if deployment_mode == "EDGE":
+        ai_embedding_breaker = CircuitBreakerFactory.get_ai_breaker("embedding")
+        ai_llm_breaker = CircuitBreakerFactory.get_ai_breaker("llm")
+        logger.info("Created AI circuit breakers for EDGE mode")
+    else:
+        # CLOUD mode: AI operations are queued to edge worker, no local circuit breakers needed
+        ai_embedding_breaker = None
+        ai_llm_breaker = None
+        logger.info("Cloud mode: Skipping AI circuit breakers (handled by edge worker)")
 else:
     # Fallback: No circuit breakers available
     http_content_breaker = None

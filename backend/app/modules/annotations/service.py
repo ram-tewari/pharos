@@ -33,7 +33,8 @@ from sqlalchemy import select, or_, and_
 
 from .model import Annotation
 from ...database.models import Resource
-from ...shared.embeddings import EmbeddingGenerator
+# Lazy import embeddings to avoid loading models in CLOUD mode
+# from ...shared.embeddings import EmbeddingGenerator
 
 # Constants
 DEFAULT_CONTEXT_LENGTH = 50
@@ -61,7 +62,24 @@ class AnnotationService:
             db: SQLAlchemy database session
         """
         self.db = db
-        self.embedding_generator = EmbeddingGenerator()
+        # Lazy load embedding generator only when needed
+        self._embedding_generator = None
+    
+    @property
+    def embedding_generator(self):
+        """Lazy load embedding generator only in EDGE mode."""
+        if self._embedding_generator is None:
+            import os
+            deployment_mode = os.getenv("MODE", "EDGE")
+            if deployment_mode == "EDGE":
+                from ...shared.embeddings import EmbeddingGenerator
+                self._embedding_generator = EmbeddingGenerator()
+            else:
+                # CLOUD mode: embeddings should be queued to edge worker
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning("Annotation embeddings not available in CLOUD mode - semantic search disabled")
+        return self._embedding_generator
 
     def create_annotation(
         self,

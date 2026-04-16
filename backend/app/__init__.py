@@ -266,8 +266,12 @@ async def lifespan(app: FastAPI):
             logger.info(
                 "✓ Cloud mode detected - skipping embedding model warmup (handled by edge worker)"
             )
+            logger.info(
+                "✓ Cloud mode: ML models will NOT be loaded (queued to edge worker via Redis)"
+            )
         else:
             # Warmup embedding model to avoid cold start latency (EDGE mode only)
+            logger.info("Edge mode: Loading ML models for local processing")
             try:
                 from .shared.embeddings import EmbeddingService
 

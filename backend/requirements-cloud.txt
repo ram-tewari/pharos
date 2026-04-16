@@ -37,14 +37,23 @@ psycopg2-binary>=2.9.9  # Sync driver for background tasks
 # Note: Standard redis package (already in requirements-base.txt) works with Upstash
 
 # ============================================================================
-# EMBEDDINGS (CPU-ONLY)
+# EMBEDDINGS (CLOUD MODE - NO LOCAL MODELS)
 # ============================================================================
 
-# Sentence Transformers (CPU-only, no GPU dependencies)
-sentence-transformers>=2.2.0
-
-# Note: No torch/transformers for GPU - use CPU-only embeddings
-# For production, consider using OpenAI embeddings API instead
+# CRITICAL: DO NOT install sentence-transformers in CLOUD mode!
+# It pulls in PyTorch (~500MB) which causes OOM on Render Starter (512MB RAM)
+#
+# sentence-transformers>=2.2.0  # ❌ DISABLED - causes OOM on Render
+#
+# Cloud mode architecture:
+# - Render API: Queues embedding tasks to Upstash Redis
+# - Edge Worker: Processes tasks with local GPU (RTX 4070)
+# - No ML models loaded on Render instance
+#
+# For cloud-based embeddings (alternative to edge worker):
+# - OpenAI embeddings API: openai>=1.0.0 (already included below)
+# - Cohere embeddings API: cohere>=4.0.0
+# - Voyage AI embeddings API: voyageai>=0.1.0
 
 # ============================================================================
 # LLM APIS (OPTIONAL)

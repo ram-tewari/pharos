@@ -5,12 +5,14 @@ API endpoints for PDF upload, annotation, and GraphRAG search.
 """
 
 import logging
+import os
 from typing import List
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...shared.database import get_db
-from ...shared.embeddings import EmbeddingService
+# Lazy import embeddings to avoid loading models in CLOUD mode
+# from ...shared.embeddings import EmbeddingService
 from .service import PDFIngestionService, PDFExtractionError
 from .schema import (
     PDFUploadRequest,
@@ -29,8 +31,23 @@ router = APIRouter(prefix="/api/resources/pdf", tags=["PDF Ingestion"])
 
 def get_pdf_service(db: AsyncSession = Depends(get_db)) -> PDFIngestionService:
     """Dependency injection for PDF ingestion service."""
-    embedding_service = EmbeddingService()
-    return PDFIngestionService(db=db, embedding_service=embedding_service)
+    # Check deployment mode - only load embeddings in EDGE mode
+    deployment_mode = os.getenv("MODE", "EDGE")
+    
+    if deployment_mode == "CLOUD":
+        # CLOUD mode: Queue embedding tasks to edge worker
+        logger.info("Cloud mode: PDF ingestion will queue embedding tasks to edge worker")
+        # TODO: Implement task queuing for embeddings
+        # For now, raise error to prevent OOM
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="PDF ingestion requires EDGE mode or edge worker. Cloud mode not yet implemented for this endpoint."
+        )
+    else:
+        # EDGE mode: Load embeddings locally
+        from ...shared.embeddings import EmbeddingService
+        embedding_service = EmbeddingService()
+        return PDFIngestionService(db=db, embedding_service=embedding_service)
 
 
 @router.post("/ingest", response_model=PDFUploadResponse, status_code=status.HTTP_201_CREATED)

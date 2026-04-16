@@ -291,11 +291,15 @@ async def lifespan(app: FastAPI):
         try:
             from .shared.cache import cache
 
-            if cache.ping():
-                logger.info("Redis cache connection established successfully")
+            if cache.redis is None:
+                logger.warning(
+                    "Redis client not initialized - check REDIS_URL environment variable"
+                )
+            elif cache.ping():
+                logger.info("✓ Redis cache connection established successfully")
             else:
                 logger.warning(
-                    "Redis cache connection failed - caching will be disabled"
+                    "Redis cache ping failed - caching will be disabled"
                 )
         except Exception as e:
             logger.warning(

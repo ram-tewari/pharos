@@ -194,9 +194,12 @@ class CacheService:
                     # Test connection
                     try:
                         self.redis.ping()
-                        logger.info("Redis connection successful")
+                        logger.info("✓ Redis connection successful")
                     except Exception as e:
-                        logger.warning(f"Redis ping failed: {e} (will retry on first request)")
+                        logger.error(f"✗ Redis ping failed: {type(e).__name__}: {e}")
+                        logger.error(f"Redis URL (first 50 chars): {redis_url[:50]}")
+                        # Don't set redis to None - let it retry on first request
+                        # self.redis = None
                 
                 elif upstash_url and upstash_token:
                     # Upstash REST API (fallback, slower but more reliable)

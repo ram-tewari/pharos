@@ -90,7 +90,8 @@ class QueueService:
 
         def _submit():
             job_id = str(uuid.uuid4())
-            job_data["job_id"] = job_id
+            job_data["task_id"] = job_id  # Edge worker expects "task_id"
+            job_data["job_id"] = job_id  # Keep for backward compatibility
             job_data["status"] = "pending"
             job_data["created_at"] = str(uuid.uuid1().time)  # timestamp
 

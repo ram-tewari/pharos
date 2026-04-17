@@ -568,6 +568,10 @@ def process_ingestion(
             f"[INGESTION] {resource_id} - Fetched {len(text_clean)} chars of content"
         )
 
+        # Determine if content is PDF
+        content_type = (fetched.get("content_type") or "").lower()
+        is_pdf = "application/pdf" in content_type or target_url.lower().endswith(".pdf")
+
         # Resolve AI core
         if ai is not None:
             ai_core = ai

@@ -134,7 +134,7 @@ async def connect_to_redis():
 
 async def connect_to_database():
     """Connect to database."""
-    from app.shared.database import get_db
+    from app.shared.database import get_db, init_database
     from app.config.settings import get_settings
 
     logger.info("Connecting to database...")
@@ -144,11 +144,10 @@ async def connect_to_database():
         db_url = settings.get_database_url()
         logger.info(f"   Database: {db_url.split('@')[1] if '@' in db_url else 'local'}")
 
-        # Test connection
-        async for session in get_db():
-            await session.execute("SELECT 1")
-            logger.info("Connected to database")
-            break
+        # Initialize database first
+        init_database(db_url, env=settings.ENV)
+        
+        logger.info("Connected to database")
 
         return get_db
     except Exception as e:

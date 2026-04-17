@@ -21,7 +21,7 @@ class QueueService:
     EDGE mode: Uses local Redis instance
     """
 
-    QUEUE_KEY = "pharos:jobs"
+    QUEUE_KEY = "pharos:tasks"  # Must match edge worker queue key
     STATUS_KEY_PREFIX = "pharos:status:"
     HISTORY_KEY = "pharos:history"
 

@@ -194,7 +194,7 @@ class RepositoryParser:
 
         except Exception as e:
             # Log error but continue with remaining files
-            print(f"⚠️  Failed to parse {file_path}: {e}")
+            print(f"WARNING: Failed to parse {file_path}: {e}")
             return []
 
     def _extract_python_imports(self, node, code: bytes) -> List[str]:
@@ -282,7 +282,7 @@ class RepositoryParser:
 
         if not file_paths:
             # Empty repository - return empty graph with self-loop
-            print("⚠️  No source files found")
+            print("WARNING: No source files found")
             edge_index = torch.tensor([[0], [0]], dtype=torch.long)
             return DependencyGraph(edge_index=edge_index, file_paths=["<empty>"])
 
@@ -310,7 +310,7 @@ class RepositoryParser:
                 [[i, i] for i in range(len(file_paths))], dtype=torch.long
             ).t()
 
-        print(f"📊 Built graph: {len(file_paths)} nodes, {edge_index.shape[1]} edges")
+        print(f"[STATS]Built graph: {len(file_paths)} nodes, {edge_index.shape[1]} edges")
 
         return DependencyGraph(edge_index=edge_index, file_paths=file_paths)
 
@@ -440,7 +440,7 @@ class RepositoryParser:
                     total_classes += file_patterns.get("classes", 0)
 
             except Exception as e:
-                print(f"⚠️  Error analyzing {file_path}: {e}")
+                print(f"WARNING: Error analyzing {file_path}: {e}")
                 continue
 
         # Calculate quality indicators
@@ -695,7 +695,7 @@ class RepositoryParser:
                     components.extend(file_components)
 
             except Exception as e:
-                print(f"⚠️  Error extracting from {file_path}: {e}")
+                print(f"WARNING: Error extracting from {file_path}: {e}")
                 continue
 
         print(f"✅ Extracted {len(components)} reusable components")

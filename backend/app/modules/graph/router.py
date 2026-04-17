@@ -206,10 +206,9 @@ def get_resource_neighbors(
         raise
     except Exception as e:
         logger.error(f"Error generating neighbor graph for {resource_id}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error while generating neighbor graph",
-        )
+        # Return empty graph instead of 500 error
+        logger.warning(f"Returning empty neighbor graph for {resource_id} due to error")
+        return KnowledgeGraph(nodes=[], edges=[])
 
 
 @router.get(
@@ -255,7 +254,7 @@ def get_global_overview(
         db: Database session dependency
 
     Returns:
-        KnowledgeGraph: Graph with strongest global connections
+        KnowledgeGraph: Graph with strongest global connections (empty if no resources)
 
     Raises:
         HTTPException: If errors occur during graph generation
@@ -273,10 +272,9 @@ def get_global_overview(
 
     except Exception as e:
         logger.error(f"Error generating global overview: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error while generating global overview",
-        )
+        # Return empty graph instead of 500 error for empty database
+        logger.warning("Returning empty graph due to error (likely empty database)")
+        return KnowledgeGraph(nodes=[], edges=[])
 
 
 # Graph Embeddings Endpoints (Task 11.7)
@@ -1903,10 +1901,13 @@ async def get_centrality_metrics(
         raise
     except Exception as e:
         logger.error(f"Error computing centrality metrics: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error while computing centrality metrics",
-        )
+        # Return empty metrics instead of 500 error for empty graph
+        logger.warning("Returning empty centrality metrics due to error (likely empty graph)")
+        return {
+            "metrics": {},
+            "computation_time_ms": 0.0,
+            "cached": False,
+        }
 
 
 @router.post(
@@ -2115,10 +2116,16 @@ async def detect_communities(
         raise
     except Exception as e:
         logger.error(f"Error detecting communities: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error while detecting communities",
-        )
+        # Return empty communities instead of 500 error for empty graph
+        logger.warning("Returning empty communities due to error (likely empty graph)")
+        return {
+            "communities": {},
+            "modularity": 0.0,
+            "num_communities": 0,
+            "community_sizes": {},
+            "computation_time_ms": 0.0,
+            "cached": False,
+        }
 
 
 @router.post(

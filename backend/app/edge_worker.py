@@ -23,6 +23,7 @@ import logging
 import os
 import sys
 import time
+from datetime import datetime
 from typing import Optional
 
 # Configure logging
@@ -157,47 +158,72 @@ async def connect_to_database():
 
 async def process_task(task: dict, embedding_service, db_session_factory):
     """Process a single embedding task."""
+    import asyncio
+    from sqlalchemy import select
+    
     task_id = task.get("task_id")
     resource_id = task.get("resource_id")
-    text = task.get("text")
 
     logger.info(f"Processing task {task_id} for resource {resource_id}")
 
     try:
-        # Generate embedding
-        start_time = time.time()
-        embedding = embedding_service.generate_embedding(text)
-        elapsed = time.time() - start_time
-
-        if not embedding:
-            logger.error(f"Failed to generate embedding for task {task_id}")
-            return False
-
-        logger.info(
-            f"Generated embedding ({len(embedding)} dims) in {elapsed*1000:.0f}ms"
-        )
-
-        # Store in database
-        async for session in db_session_factory():
+        # Use sync database operations in thread pool to avoid asyncpg issues
+        loop = asyncio.get_event_loop()
+        
+        def _process_sync():
+            from app.shared.database import SessionLocal
+            from app.database import models as db_models
+            
+            session = SessionLocal()
             try:
-                from app.database import models as db_models
-
-                # Update resource with embedding
-                resource = await session.get(db_models.Resource, resource_id)
-                if resource:
-                    resource.embedding = embedding
-                    await session.commit()
-                    logger.info(f"Stored embedding for resource {resource_id}")
-                    return True
-                else:
+                # Get resource
+                resource = session.get(db_models.Resource, resource_id)
+                if not resource:
                     logger.error(f"Resource {resource_id} not found")
                     return False
+
+                # Extract text from resource (title + description)
+                text_parts = []
+                if resource.title:
+                    text_parts.append(resource.title)
+                if resource.description:
+                    text_parts.append(resource.description)
+                
+                text = " ".join(text_parts) if text_parts else resource.title or "Untitled"
+                
+                logger.info(f"Extracted text ({len(text)} chars) from resource {resource_id}")
+
+                # Generate embedding
+                start_time = time.time()
+                embedding = embedding_service.generate_embedding(text)
+                elapsed = time.time() - start_time
+
+                if not embedding:
+                    logger.error(f"Failed to generate embedding for task {task_id}")
+                    return False
+
+                logger.info(
+                    f"Generated embedding ({len(embedding)} dims) in {elapsed*1000:.0f}ms"
+                )
+
+                # Update resource with embedding and status
+                resource.embedding = str(embedding)  # Convert to string for storage
+                resource.ingestion_status = "completed"
+                resource.ingestion_completed_at = datetime.utcnow()
+                
+                session.commit()
+                logger.info(f"Stored embedding for resource {resource_id}")
+                return True
+
             except Exception as e:
                 logger.error(f"Database error: {e}", exc_info=True)
-                await session.rollback()
+                session.rollback()
                 return False
             finally:
-                await session.close()
+                session.close()
+        
+        # Run sync database operations in thread pool
+        return await loop.run_in_executor(None, _process_sync)
 
     except Exception as e:
         logger.error(f"Error processing task {task_id}: {e}", exc_info=True)

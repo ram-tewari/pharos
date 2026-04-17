@@ -672,13 +672,21 @@ def process_ingestion(
                         f"Chunking config: strategy={chunking_strategy}, size={chunk_size}, overlap={chunk_overlap}"
                     )
 
+                    # Use the actual EmbeddingGenerator for chunk embeddings
+                    try:
+                        from ...shared.embeddings import EmbeddingGenerator as _EmbGen
+                        _chunk_embed_svc = _EmbGen()
+                    except Exception as e:
+                        logger.warning(f"Failed to initialize EmbeddingGenerator: {e}")
+                        _chunk_embed_svc = None
+
                     chunking_service = ChunkingService(
                         db=session,
                         strategy=chunking_strategy,
                         chunk_size=chunk_size,
                         overlap=chunk_overlap,
                         parser_type="text",
-                        embedding_service=ai_core,  # Reuse AI core for embeddings
+                        embedding_service=_chunk_embed_svc,
                     )
 
                     # Prepare chunk metadata with page boundaries for PDFs

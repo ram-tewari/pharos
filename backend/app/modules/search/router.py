@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 from ...shared.database import get_sync_db
 from .schema import (
+    Facets,
     SearchQuery,
     SearchResults,
     ThreeWayHybridResults,
@@ -90,7 +91,9 @@ def search_endpoint(payload: SearchQuery, db: Session = Depends(get_sync_db)):
             snippets = {}
         items_read = [ResourceRead.model_validate(it) for it in items]
         return SearchResults(
-            total=total, items=items_read, facets=facets, snippets=snippets
+            total=total, items=items_read,
+            facets=facets if isinstance(facets, Facets) else Facets(),
+            snippets=snippets,
         )
     except ValueError as ve:
         raise HTTPException(
@@ -152,7 +155,7 @@ def three_way_hybrid_search_endpoint(
         return ThreeWayHybridResults(
             total=total,
             items=items_read,
-            facets=facets,
+            facets=facets if isinstance(facets, Facets) else Facets(),
             snippets=snippets,
             latency_ms=metadata.get("latency_ms", 0.0),
             method_contributions=MethodContributions(

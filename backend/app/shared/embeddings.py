@@ -52,15 +52,20 @@ class EmbeddingGenerator:
             self.device = "cpu"
         logger.info(f"Embedding device: {self.device}")
 
-    def _ensure_loaded(self):
-        """Lazy load the embedding model in a thread-safe manner."""
+    def _ensure_loaded(self, force_load_in_cloud=False):
+        """Lazy load the embedding model in a thread-safe manner.
+        
+        Args:
+            force_load_in_cloud: If True, load model even in CLOUD mode (for query embeddings)
+        """
         if self._model is None:
             with self._model_lock:
                 if self._model is None:  # Double-check locking pattern
-                    # Check if running in CLOUD mode - skip model loading
+                    # Check if running in CLOUD mode - skip model loading for ingestion tasks
+                    # But allow loading for query embeddings (search needs immediate results)
                     import os
                     deployment_mode = os.getenv("MODE", "EDGE")
-                    if deployment_mode == "CLOUD":
+                    if deployment_mode == "CLOUD" and not force_load_in_cloud:
                         logger.info("Cloud mode detected - skipping embedding model load (handled by edge worker)")
                         return
                     
@@ -107,11 +112,12 @@ class EmbeddingGenerator:
                 return False
         return False
 
-    def generate_embedding(self, text: str) -> List[float]:
+    def generate_embedding(self, text: str, force_load_in_cloud=False) -> List[float]:
         """Generate vector embedding for the given text.
 
         Args:
             text: Input text to embed
+            force_load_in_cloud: If True, load model even in CLOUD mode (for query embeddings)
 
         Returns:
             List of float values representing the embedding vector.
@@ -121,7 +127,7 @@ class EmbeddingGenerator:
         if not text:
             return []
 
-        self._ensure_loaded()
+        self._ensure_loaded(force_load_in_cloud=force_load_in_cloud)
         if self._model is not None:
             try:
                 # sentence-transformers returns numpy array, convert to list
@@ -208,16 +214,17 @@ class EmbeddingService:
         """
         return self.embedding_generator.warmup()
 
-    def generate_embedding(self, text: str) -> List[float]:
+    def generate_embedding(self, text: str, force_load_in_cloud=False) -> List[float]:
         """Generate embedding for text.
 
         Args:
             text: Input text to embed
+            force_load_in_cloud: If True, load model even in CLOUD mode (for query embeddings)
 
         Returns:
             Embedding vector as list of floats
         """
-        return self.embedding_generator.generate_embedding(text)
+        return self.embedding_generator.generate_embedding(text, force_load_in_cloud=force_load_in_cloud)
 
     def generate_sparse_embedding(self, text: str) -> dict:
         """Generate sparse embedding for hybrid search.

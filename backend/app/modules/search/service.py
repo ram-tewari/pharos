@@ -176,9 +176,10 @@ class SearchService:
         )
 
         # Generate query embedding
+        # Force load model in CLOUD mode for query embeddings (search needs immediate results)
         try:
             embedding_service = EmbeddingService(self.db)
-            query_embedding = embedding_service.generate_embedding(query)
+            query_embedding = embedding_service.generate_embedding(query, force_load_in_cloud=True)
         except Exception as e:
             logger.error(f"Failed to generate query embedding: {e}")
             return []

@@ -212,13 +212,23 @@ class SearchService:
         # Compute similarity scores using actual embeddings
         chunk_scores = []
         for chunk in all_chunks:
-            if chunk.embedding:
+            # Check if embedding is in chunk_metadata (current storage location)
+            embedding = None
+            if chunk.chunk_metadata and "embedding_vector" in chunk.chunk_metadata:
+                embedding_str = chunk.chunk_metadata["embedding_vector"]
+                # Parse string to list of floats (stored as space-separated string)
+                if isinstance(embedding_str, str):
+                    embedding = [float(x) for x in embedding_str.split()]
+                else:
+                    embedding = embedding_str  # Already a list
+            
+            if embedding:
                 # Use cosine similarity between query embedding and chunk embedding
-                score = self._cosine_similarity(query_embedding, chunk.embedding)
+                score = self._cosine_similarity(query_embedding, embedding)
                 chunk_scores.append((chunk, score))
             else:
                 # Fallback to keyword similarity if no embedding
-                score = self._compute_similarity_score(query, chunk.content)
+                score = self._compute_similarity_score(query, chunk.content or "")
                 chunk_scores.append((chunk, score))
 
         # Sort by score and take top-k

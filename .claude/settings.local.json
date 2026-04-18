@@ -26,7 +26,16 @@
       "Bash(python -m pytest tests/integration/test_url_security.py -x --no-header)",
       "Bash(python -c \"import app.routers.ingestion\")",
       "Bash(python -c \"from app.routers.ingestion import get_redis_client; print\\(get_redis_client\\)\")",
-      "Bash(/c/Users/rooma/PycharmProjects/pharos/backend/.venv/Scripts/pip3.exe install:*)"
+      "Bash(/c/Users/rooma/PycharmProjects/pharos/backend/.venv/Scripts/pip3.exe install:*)",
+      "Bash(python -c ' *)",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "Bash(curl -s --max-time 30 -X POST https://pharos-cloud-api.onrender.com/api/search/search -H 'Content-Type: application/json' -H 'Origin: https://pharos-cloud-api.onrender.com' -d '{\"text\": \"langchain\", \"limit\": 5}')",
+      "Bash(python -m json.tool)",
+      "Bash(python -c \" import json, sys d = json.load\\(sys.stdin\\) print\\(f'total={d.get\\(\\\\\"total\\\\\",0\\)}, items={len\\(d.get\\(\\\\\"items\\\\\",[]\\)\\)}'\\) for it in d.get\\('items', []\\)[:3]: print\\(f' - [{it.get\\(\\\\\"type\\\\\",\\\\\"?\\\\\"\\)}] {it.get\\(\\\\\"title\\\\\",\\\\\"?\\\\\"\\)[:70]}'\\) \")",
+      "Bash(curl -s --max-time 45 'https://pharos-cloud-api.onrender.com/api/search/search/three-way-hybrid?query=langchain&limit=5')",
+      "Bash(python -c \" import json, sys d = json.load\\(sys.stdin\\) print\\(f'total={d.get\\(\\\\\"total\\\\\",0\\)}, latency={d.get\\(\\\\\"latency_ms\\\\\",0\\):.0f}ms'\\) for it in d.get\\('items', []\\)[:5]: print\\(f' - [{it.get\\(\\\\\"type\\\\\",\\\\\"?\\\\\"\\)}] {it.get\\(\\\\\"title\\\\\",\\\\\"?\\\\\"\\)[:70]}'\\) \")",
+      "Bash(curl -s --max-time 30 'https://pharos-cloud-api.onrender.com/api/search/search/three-way-hybrid?query=FastAPI+framework&limit=5&enable_reranking=false')"
     ]
   }
 }

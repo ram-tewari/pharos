@@ -3,10 +3,10 @@
   "status": 200,
   "extracted_title": "FastAPI",
   "readability": {
-    "reading_ease": 36.83602230197201,
-    "fk_grade": 12.522864517169271
+    "reading_ease": 55.74653910323255,
+    "fk_grade": 8.769905648843988
   },
   "content_type": "",
   "url": "https://fastapi.tiangolo.com/",
-  "archived_at": "2026-04-17T20:48:41.726324+00:00"
+  "archived_at": "2026-04-17T22:56:05.897920+00:00"
 }

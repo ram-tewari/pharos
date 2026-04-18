@@ -94,26 +94,34 @@ class AdvancedSearchService:
         limit = query.limit if hasattr(query, "limit") else 20
         offset = query.offset if hasattr(query, "offset") else 0
 
+        def _safe_search(fn, *args, **kwargs):
+            """Run a search method; rollback if it aborts the transaction."""
+            t0 = time.time()
+            try:
+                result = fn(*args, **kwargs)
+            except Exception:
+                result = []
+            # Restore clean transaction state if the sub-search left it aborted
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            return result, (time.time() - t0) * 1000
+
         # Step 1: Execute FTS5 search (100 candidates)
-        fts_start = time.time()
-        fts_results = AdvancedSearchService._execute_fts_search(
-            db, query_text, limit=100
+        fts_results, fts_time = _safe_search(
+            AdvancedSearchService._execute_fts_search, db, query_text, limit=100
         )
-        fts_time = (time.time() - fts_start) * 1000
 
         # Step 2: Execute dense vector search (100 candidates)
-        dense_start = time.time()
-        dense_results = AdvancedSearchService._execute_dense_search(
-            db, query_text, limit=100
+        dense_results, dense_time = _safe_search(
+            AdvancedSearchService._execute_dense_search, db, query_text, limit=100
         )
-        dense_time = (time.time() - dense_start) * 1000
 
         # Step 3: Execute sparse vector search (100 candidates)
-        sparse_start = time.time()
-        sparse_results = AdvancedSearchService._execute_sparse_search(
-            db, query_text, limit=100
+        sparse_results, sparse_time = _safe_search(
+            AdvancedSearchService._execute_sparse_search, db, query_text, limit=100
         )
-        sparse_time = (time.time() - sparse_start) * 1000
 
         # Step 4: Apply query-adaptive weighting
         if adaptive_weighting:
@@ -137,12 +145,6 @@ class AdvancedSearchService:
             rerank_time = (time.time() - rerank_start) * 1000
         else:
             rerank_time = 0.0
-
-        # Recover from any aborted transaction before issuing ORM queries
-        try:
-            db.rollback()
-        except Exception:
-            pass
 
         # Step 7: Fetch resources and apply pagination
         resource_ids = [rid for rid, _ in merged_results[offset : offset + limit]]

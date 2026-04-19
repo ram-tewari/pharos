@@ -351,6 +351,100 @@ The Auth module no longer manages tiers, roles, or multiple user accounts. It ex
 
 ---
 
+## ADR-013: Edge-Funnel Query Embedding via Tailscale
+
+**Status:** Accepted (2026-04-18)
+
+**Context:**
+
+ADR-011 established that Render's 512 MB instance cannot load ML libraries.
+The ingestion path (edge → Redis → NeonDB) works correctly, but the search
+query path was broken: `_execute_dense_search` called
+`EmbeddingService.generate_embedding(query)` on the cloud instance, which
+returned an empty list in CLOUD mode because `_ensure_loaded()` skips model
+loading. This produced silent zero-result searches.
+
+A `force_load_in_cloud` stopgap parameter was added to bypass the CLOUD guard
+for query embeddings, but this caused the cloud instance to attempt loading
+`nomic-embed-text-v1` (~600 MB), OOM-killing the process.
+
+The system needed a way for Render to get query embeddings on demand without
+loading any ML library locally.
+
+**Decision:**
+
+Run a standalone FastAPI process (`embed_server.py`) on the developer's laptop
+that loads `nomic-ai/nomic-embed-text-v1` once at startup and serves
+`POST /embed {"text":"…"} → {"embedding":[768 floats]}` on port 8001.
+
+Expose this endpoint publicly via **Tailscale Funnel** at a stable
+`https://<machine>.<tailnet>.ts.net` hostname. Render's search service calls
+this URL synchronously during query handling (5 s timeout), then runs cosine
+similarity against stored NeonDB vectors.
+
+Key implementation details:
+
+- `embed_server.py` is a separate process from both ingestion workers; it does
+  not touch Redis or the task queue. The model is loaded once at uvicorn
+  startup, shared across all requests.
+- `EDGE_EMBEDDING_URL` env var on Render holds the Funnel hostname. Missing or
+  unreachable → HTTP 503 surfaced to the caller (not silent empty results).
+- The outer `except Exception: return []` in `_execute_dense_search` was
+  removed. DB/network/Funnel failures now raise `HTTPException(503)` so Ronin
+  sees a clear error rather than an empty result set.
+- `force_load_in_cloud` removed from `EmbeddingGenerator` and `EmbeddingService`.
+  CLOUD mode always skips local model loading; all query embeddings go through
+  the Funnel endpoint.
+
+**Nomic prefix note:** `nomic-embed-text-v1` supports `search_document:` /
+`search_query:` prefixes for improved retrieval performance. However, documents
+in NeonDB were ingested without any prefix (raw composite text). Query
+embeddings must therefore also omit the prefix to land in the same embedding
+space. Adding prefixes would require re-embedding all stored documents.
+
+**Tailscale Funnel over Cloudflare Tunnel:** Cloudflare's free stable hostname
+requires a paid registered domain. Tailscale Funnel provides a free
+`*.ts.net` hostname with no domain purchase. Funnel configuration persists
+in `tailscaled` state across reboots; the `tailscale funnel 8001` CLI command
+is a one-time setup step, not a persistent process to manage.
+
+**Consequences:**
+
+- ✅ **Search works in production**: queries return real results instead of silent []
+- ✅ **Zero ML dependencies added to Render**: `requirements-cloud.txt` unchanged
+- ✅ **Clear errors on Funnel outage**: 503 propagates to Ronin; no silent failures
+- ✅ **Same model both sides**: embedding space consistency guaranteed
+- ✅ **Cost**: $0 — Tailscale Funnel free tier, local hardware
+- ⚠️ **Laptop dependency for search**: queries fail if laptop is off or asleep
+  (acceptable: Ronin is only used when the developer is active)
+- ⚠️ **Cold start**: first query after `PharosEmbedServer` restart takes ~5 s
+  (model load); subsequent queries ~50 ms
+- ⚠️ **Funnel is a dependency**: if Tailscale services are down, search is down
+
+**Alternatives Considered:**
+
+1. **Hosted embedding API (OpenAI, Voyage AI, Cohere)**: Rejected — per-request
+   cost at query time, vendor dependency, and documents would need re-embedding
+   with the hosted model to maintain embedding space consistency.
+
+2. **Small CPU-only model on Render**: Rejected — a model small enough to fit
+   in 512 MB (e.g., `all-MiniLM-L6-v2`, 384 dims) produces a different
+   embedding space than the `nomic-embed-text-v1` vectors already stored.
+   Re-embedding all documents would be required, and search quality would
+   degrade.
+
+3. **Cloudflare Tunnel**: Rejected — free stable hostnames require a paid
+   registered domain. Tailscale Funnel provides the same capability at zero
+   cost via `*.ts.net`.
+
+4. **Bolt HTTP onto existing ingestion workers**: Rejected — both
+   `backend/edge_worker.py` (sync polling loop) and `backend/app/edge_worker.py`
+   (asyncio polling loop) have no HTTP server in their event loop. Attaching
+   uvicorn would require invasive restructuring of both workers' run loops.
+   A separate 60-line FastAPI file is the minimal, clean solution.
+
+---
+
 ## Decision Template
 
 ```markdown

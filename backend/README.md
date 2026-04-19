@@ -57,7 +57,7 @@ Pharos is your second brain for code - combining intelligent code analysis with 
 
 - **Vertical Slice Architecture**: 14 self-contained modules
 - **Event-Driven**: Modules communicate via event bus (<1ms latency)
-- **Hybrid Edge-Cloud**: Optional local GPU worker for embeddings
+- **Hybrid Edge-Cloud**: Local GPU handles all ML (ingestion embeddings via NSSM worker; query embeddings via `embed_server.py` exposed through Tailscale Funnel — Render calls the Funnel URL at search time, no ML on cloud)
 - **API-First**: All features accessible via REST API
 
 ---

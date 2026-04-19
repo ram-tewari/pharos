@@ -74,7 +74,7 @@ echo.
 echo Press Ctrl+C to stop
 echo.
 
-python -m app.edge_worker
+python worker.py edge
 
 REM Capture exit code
 set EXIT_CODE=%ERRORLEVEL%

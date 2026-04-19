@@ -75,7 +75,7 @@ Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
 Write-Host ""
 
 try {
-    python -m app.edge_worker
+    python worker.py edge
 } catch {
     Write-Host ""
     Write-Host "ERROR: Worker crashed!" -ForegroundColor Red

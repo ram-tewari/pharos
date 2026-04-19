@@ -155,7 +155,7 @@ Get-Content .env.edge | ForEach-Object {
 }
 
 # Start worker
-python -m app.edge_worker
+python worker.py edge
 ```
 
 ## Expected Output
@@ -282,7 +282,7 @@ RuntimeError: CUDA out of memory
 3. Use CPU mode temporarily:
    ```powershell
    $env:CUDA_VISIBLE_DEVICES = ""
-   python -m app.edge_worker
+   python worker.py edge
    ```
 
 ### Issue: "No tasks being processed"
@@ -322,29 +322,152 @@ For multiple tasks, the edge worker processes them one at a time. To process in 
 
 ## Running as a Service
 
-### Option A: Windows Task Scheduler
-
-1. Open Task Scheduler
-2. Create Basic Task
-3. Trigger: At startup
-4. Action: Start a program
-5. Program: `powershell.exe`
-6. Arguments: `-File "C:\path\to\pharos\backend\start_edge_worker.ps1"`
-
-### Option B: NSSM (Non-Sucking Service Manager)
+Use NSSM for both the ingestion worker and the embedding HTTP server. NSSM
+handles crash-restart and log rotation automatically. See
+[NSSM_SERVICE_CONFIG.md](../guides/NSSM_SERVICE_CONFIG.md) for full service
+definitions including the `PharosEmbedServer` entry.
 
 ```powershell
-# Install NSSM
-choco install nssm
+# Install NSSM if not already present
+choco install nssm -y
 
-# Create service
-nssm install PharosEdgeWorker "C:\path\to\python.exe" "-m app.edge_worker"
-nssm set PharosEdgeWorker AppDirectory "C:\path\to\pharos\backend"
+# Ingestion worker
+nssm install PharosEdgeWorker `
+  "C:\Users\rooma\PycharmProjects\pharos\backend\.venv\Scripts\python.exe" `
+  "worker.py edge"
+nssm set PharosEdgeWorker AppDirectory "C:\Users\rooma\PycharmProjects\pharos\backend"
 nssm set PharosEdgeWorker AppEnvironmentExtra "MODE=EDGE"
-
-# Start service
 nssm start PharosEdgeWorker
+
+# Embedding HTTP server (see Step 8 below)
+nssm install PharosEmbedServer `
+  "C:\Users\rooma\PycharmProjects\pharos\backend\.venv\Scripts\python.exe" `
+  "-m uvicorn embed_server:app --host 127.0.0.1 --port 8001"
+nssm set PharosEmbedServer AppDirectory "C:\Users\rooma\PycharmProjects\pharos\backend"
+nssm set PharosEmbedServer AppEnvironmentExtra "MODE=EDGE"
+nssm start PharosEmbedServer
 ```
+
+## Step 8: HTTP Embedding Server
+
+Render's cloud search API cannot load ML models (512 MB RAM limit). Instead it
+calls this laptop's `embed_server.py` via Tailscale Funnel to get query
+embeddings on demand.
+
+`embed_server.py` is a standalone FastAPI process that:
+- loads `nomic-ai/nomic-embed-text-v1` once at startup (same model as ingestion)
+- exposes `POST /embed {"text":"..."} → {"embedding":[float,…]}`
+- listens on `127.0.0.1:8001` (Tailscale Funnel proxies public HTTPS → this port)
+
+### Start manually (test first)
+
+```powershell
+cd C:\Users\rooma\PycharmProjects\pharos\backend
+.\.venv\Scripts\Activate.ps1
+$env:MODE = "EDGE"
+uvicorn embed_server:app --host 127.0.0.1 --port 8001
+```
+
+Expected output:
+```
+INFO:     Loading embedding model: nomic-ai/nomic-embed-text-v1
+INFO:     Embedding model ready on cuda
+INFO:     Uvicorn running on http://127.0.0.1:8001
+```
+
+### Install as NSSM service (auto-starts on boot)
+
+See [NSSM_SERVICE_CONFIG.md](../guides/NSSM_SERVICE_CONFIG.md) — `PharosEmbedServer` section.
+
+## Step 9: Tailscale Funnel Setup
+
+Tailscale Funnel gives the embed server a stable public HTTPS hostname
+(`https://<machine>.<tailnet>.ts.net`) that Render can reach without any
+firewall changes.
+
+### One-time setup
+
+**1. Install Tailscale for Windows**
+
+Download from https://tailscale.com/download and run the installer. The
+installer registers `tailscaled` as a Windows service automatically.
+
+**2. Sign in with GitHub**
+
+```powershell
+tailscale login
+```
+
+Authenticate with the `ram-tewari` GitHub account when the browser opens.
+
+**3. Enable Funnel in the admin console**
+
+Go to https://login.tailscale.com/admin/machines, click your machine, then
+**Edit node attributes** and enable the `funnel` attribute. Save.
+
+**4. Configure Funnel for port 8001**
+
+```powershell
+tailscale funnel 8001
+```
+
+This registers port 8001 as the Funnel target. The command exits after
+configuring; the Tailscale daemon keeps the Funnel rule active across reboots.
+
+**5. Verify Funnel persists after reboot**
+
+Reboot, then check:
+```powershell
+tailscale funnel status
+```
+
+Expected output includes `https://<machine>.<tailnet>.ts.net/ → 127.0.0.1:8001`.
+
+If the Funnel rule does not survive a reboot, install the `PharosTailscaleFunnel`
+NSSM fallback service described in
+[NSSM_SERVICE_CONFIG.md](../guides/NSSM_SERVICE_CONFIG.md).
+
+**6. Get your public hostname**
+
+```powershell
+tailscale status
+```
+
+Record the `*.ts.net` hostname shown next to your machine (e.g.,
+`desktop-abc123.tail1234.ts.net`).
+
+**7. Set the Render environment variable**
+
+In the Render dashboard, add:
+```
+EDGE_EMBEDDING_URL = https://desktop-abc123.tail1234.ts.net
+```
+
+(No trailing slash. Render restarts automatically.)
+
+## Step 10: End-to-End Verification
+
+With both NSSM services running and Funnel configured, verify the full path:
+
+```bash
+# From any machine (or from Render's shell via render.com dashboard)
+curl https://<machine>.<tailnet>.ts.net/embed \
+  -H "Content-Type: application/json" \
+  -d '{"text": "what does the authentication system do"}'
+```
+
+Expected response (768 floats, not all shown):
+```json
+{"embedding": [0.023, -0.041, 0.117, ...]}
+```
+
+Health check:
+```bash
+curl https://<machine>.<tailnet>.ts.net/health
+# {"status": "ok", "model": "nomic-ai/nomic-embed-text-v1"}
+```
+
+Then run a search from Ronin or via the API and confirm results are non-empty.
 
 ## Monitoring
 
@@ -372,19 +495,20 @@ python -c "import asyncio; from app.shared.upstash_redis import UpstashRedisClie
 
 ## Next Steps
 
-1. **Test end-to-end**: Create resource → verify embedding generated
-2. **Monitor performance**: Track GPU usage, task latency
-3. **Scale**: Add more edge workers if needed (different machines)
-4. **Optimize**: Tune polling interval, batch processing
+1. **Ingestion**: Create resource → verify embedding generated by edge worker
+2. **Search**: Run a search query via Ronin → confirm non-empty results (requires Funnel live)
+3. **Monitor GPU**: `nvidia-smi -l 1` during active use
+4. **Optimize**: Tune `WORKER_POLL_INTERVAL` in `.env.edge`
 
 ## Related Documentation
 
 - [Hybrid Architecture Explained](HYBRID_ARCHITECTURE_EXPLAINED.md)
+- [NSSM Service Config](../guides/NSSM_SERVICE_CONFIG.md)
 - [Render Deployment Guide](RENDER_FREE_DEPLOYMENT.md)
 - [Troubleshooting Guide](../../TROUBLESHOOTING.md)
 
 ---
 
 **Status**: Ready for setup  
-**Last Updated**: 2026-04-15  
-**Next**: Start edge worker and test with cloud API
+**Last Updated**: 2026-04-18  
+**Next**: Install PharosEmbedServer NSSM service and configure Tailscale Funnel

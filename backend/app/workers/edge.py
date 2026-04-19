@@ -7,7 +7,7 @@ using the local GPU. It's part of the hybrid edge-cloud architecture where:
 - Edge Worker (Local): Heavy ML workloads, processes tasks
 
 Usage:
-    python -m app.edge_worker
+    python worker.py edge
 
 Environment Variables:
     MODE=EDGE (required)
@@ -147,7 +147,7 @@ async def connect_to_database():
 
         # Initialize database first
         init_database(db_url, env=settings.ENV)
-        
+
         logger.info("Connected to database")
 
         return get_db

@@ -39,30 +39,111 @@ choco install nssm -y
 2. Extract to a folder (e.g., `C:\nssm`)
 3. Add to PATH or use full path to nssm.exe
 
-### 2. Install Service
+### 2. Install Services
+
+There are three Pharos NSSM services. Adjust the base path to match your
+machine (`C:\Users\rooma\PycharmProjects\pharos\backend`).
+
+#### PharosEdgeWorker — ingestion worker
+
+Polls Upstash Redis for ingestion tasks and runs the full pipeline
+(fetch → embed → store) on the local GPU.
 
 ```powershell
-# Navigate to backend directory
-cd C:\path\to\neo-alexandria-2.0\backend
+$base = "C:\Users\rooma\PycharmProjects\pharos\backend"
+$py   = "$base\.venv\Scripts\python.exe"
 
-# Install service
-nssm install NeoAlexandriaWorker "C:\path\to\neo-alexandria-2.0\backend\.venv\Scripts\python.exe" "worker.py"
-
-# Configure service
-nssm set NeoAlexandriaWorker AppDirectory "C:\path\to\neo-alexandria-2.0\backend"
-nssm set NeoAlexandriaWorker DisplayName "Neo Alexandria Edge Worker"
-nssm set NeoAlexandriaWorker Description "GPU-accelerated edge worker for Neo Alexandria knowledge management system"
-nssm set NeoAlexandriaWorker Start SERVICE_AUTO_START
-nssm set NeoAlexandriaWorker AppStdout "C:\path\to\neo-alexandria-2.0\backend\worker.log"
-nssm set NeoAlexandriaWorker AppStderr "C:\path\to\neo-alexandria-2.0\backend\worker.error.log"
-nssm set NeoAlexandriaWorker AppRotateFiles 1
-nssm set NeoAlexandriaWorker AppRotateBytes 10485760
+nssm install PharosEdgeWorker $py "worker.py edge"
+nssm set PharosEdgeWorker AppDirectory    $base
+nssm set PharosEdgeWorker DisplayName     "Pharos Edge Ingestion Worker"
+nssm set PharosEdgeWorker Description     "GPU-accelerated ingestion worker — polls Upstash Redis, embeds documents, writes to NeonDB"
+nssm set PharosEdgeWorker Start           SERVICE_AUTO_START
+nssm set PharosEdgeWorker AppEnvironmentExtra "MODE=EDGE"
+nssm set PharosEdgeWorker AppStdout       "$base\logs\edge_worker.log"
+nssm set PharosEdgeWorker AppStderr       "$base\logs\edge_worker.error.log"
+nssm set PharosEdgeWorker AppRotateFiles  1
+nssm set PharosEdgeWorker AppRotateBytes  10485760
+nssm start PharosEdgeWorker
 ```
 
-### 3. Start Service
+#### PharosRepoWorker — GitHub repository ingestion worker
+
+Polls Upstash Redis `ingest_queue` for repository ingestion tasks and runs the
+full workflow (clone → AST parse → embed → store → convert) locally.
 
 ```powershell
-nssm start NeoAlexandriaWorker
+$base = "C:\Users\rooma\PycharmProjects\pharos\backend"
+$py   = "$base\.venv\Scripts\python.exe"
+
+nssm install PharosRepoWorker $py "worker.py repo"
+nssm set PharosRepoWorker AppDirectory    $base
+nssm set PharosRepoWorker DisplayName     "Pharos Repo Ingestion Worker"
+nssm set PharosRepoWorker Description     "GitHub repository ingestion worker — clones repos, AST-parses, embeds, writes to NeonDB"
+nssm set PharosRepoWorker Start           SERVICE_AUTO_START
+nssm set PharosRepoWorker AppEnvironmentExtra "MODE=EDGE"
+nssm set PharosRepoWorker AppStdout       "$base\logs\repo_worker.log"
+nssm set PharosRepoWorker AppStderr       "$base\logs\repo_worker.error.log"
+nssm set PharosRepoWorker AppRotateFiles  1
+nssm set PharosRepoWorker AppRotateBytes  10485760
+nssm start PharosRepoWorker
+```
+
+#### PharosEmbedServer — HTTP embedding server
+
+Loads `nomic-ai/nomic-embed-text-v1` on the GPU and serves
+`POST /embed` on `127.0.0.1:8001`. Tailscale Funnel proxies this port
+to a public `*.ts.net` HTTPS endpoint that Render calls during search.
+
+```powershell
+$base = "C:\Users\rooma\PycharmProjects\pharos\backend"
+$py   = "$base\.venv\Scripts\python.exe"
+
+nssm install PharosEmbedServer $py "-m uvicorn embed_server:app --host 127.0.0.1 --port 8001"
+nssm set PharosEmbedServer AppDirectory    $base
+nssm set PharosEmbedServer DisplayName     "Pharos Edge Embedding Server"
+nssm set PharosEmbedServer Description     "FastAPI server exposing POST /embed for query embeddings; called by Render via Tailscale Funnel"
+nssm set PharosEmbedServer Start           SERVICE_AUTO_START
+nssm set PharosEmbedServer AppEnvironmentExtra "MODE=EDGE"
+nssm set PharosEmbedServer AppStdout       "$base\logs\embed_server.log"
+nssm set PharosEmbedServer AppStderr       "$base\logs\embed_server.error.log"
+nssm set PharosEmbedServer AppRotateFiles  1
+nssm set PharosEmbedServer AppRotateBytes  10485760
+nssm start PharosEmbedServer
+```
+
+Verify it started:
+```powershell
+nssm status PharosEmbedServer
+curl http://127.0.0.1:8001/health
+# {"status": "ok", "model": "nomic-ai/nomic-embed-text-v1"}
+```
+
+#### PharosTailscaleFunnel — Funnel persistence fallback (optional)
+
+Tailscale Funnel configuration persists in `tailscaled` state by default
+and re-applies on daemon restart. **Run `tailscale funnel 8001` once manually,
+reboot, then check `tailscale funnel status`.**
+
+Only install this NSSM service if the Funnel rule does not survive a reboot:
+
+```powershell
+# Find tailscale.exe — typically:
+$ts = "C:\Program Files\Tailscale\tailscale.exe"
+
+nssm install PharosTailscaleFunnel $ts "funnel 8001"
+nssm set PharosTailscaleFunnel DisplayName "Pharos Tailscale Funnel (port 8001)"
+nssm set PharosTailscaleFunnel Description "Keeps Tailscale Funnel active for PharosEmbedServer on port 8001"
+nssm set PharosTailscaleFunnel Start       SERVICE_AUTO_START
+nssm set PharosTailscaleFunnel AppStdout   "C:\Users\rooma\PycharmProjects\pharos\backend\logs\tailscale_funnel.log"
+nssm start PharosTailscaleFunnel
+```
+
+### 3. Start Services
+
+```powershell
+nssm start PharosEdgeWorker
+nssm start PharosEmbedServer
+# PharosTailscaleFunnel only if needed (see above)
 ```
 
 ## Service Management Commands
@@ -111,16 +192,14 @@ nssm remove NeoAlexandriaWorker confirm
 
 ## Service Configuration Details
 
-| Setting | Value | Description |
-|---------|-------|-------------|
-| Service Name | NeoAlexandriaWorker | Internal service name |
-| Display Name | Neo Alexandria Edge Worker | Name shown in Services |
-| Executable | `.venv\Scripts\python.exe` | Python interpreter |
-| Arguments | `worker.py` | Worker script |
-| Working Directory | Backend directory | Where worker.py is located |
-| Startup Type | Automatic | Starts on boot |
-| Log Rotation | Enabled | Rotates at 10MB |
-| Restart Policy | Always | Restarts on failure |
+| Service | Executable | Arguments | Port | Purpose |
+|---------|-----------|-----------|------|---------|
+| `PharosEdgeWorker` | `.venv\Scripts\python.exe` | `worker.py edge` | — | Edge ingestion pipeline (polls pharos:tasks) |
+| `PharosRepoWorker` | `.venv\Scripts\python.exe` | `worker.py repo` | — | GitHub repo ingestion (polls ingest_queue) |
+| `PharosEmbedServer` | `.venv\Scripts\python.exe` | `-m uvicorn embed_server:app --host 127.0.0.1 --port 8001` | 8001 | Query embedding HTTP server |
+| `PharosTailscaleFunnel` | `tailscale.exe` | `funnel 8001` | — | Funnel persistence fallback only |
+
+All services: `Start=SERVICE_AUTO_START`, log rotation at 10 MB, NSSM restart on failure.
 
 ## Troubleshooting
 

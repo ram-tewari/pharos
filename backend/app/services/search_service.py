@@ -6,9 +6,12 @@ Provides basic search functionality.
 """
 
 from typing import Any, Dict, List, Tuple
+import os
 import time
 import json
 import numpy as np
+import httpx
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text, or_
 
@@ -431,9 +434,27 @@ class AdvancedSearchService:
             List of (resource_id, similarity_score) tuples
         """
         try:
-            # Generate query embedding
-            embedding_service = EmbeddingService(db)
-            query_embedding = embedding_service.generate_embedding(query)
+            # Generate query embedding — delegate to edge worker via Tailscale Funnel in CLOUD mode
+            if os.getenv("MODE") == "CLOUD":
+                edge_url = os.getenv("EDGE_EMBEDDING_URL", "").rstrip("/")
+                if not edge_url:
+                    raise HTTPException(status_code=503, detail="EDGE_EMBEDDING_URL not configured")
+                try:
+                    resp = httpx.post(
+                        f"{edge_url}/embed",
+                        json={"text": query},
+                        timeout=5.0,
+                    )
+                    resp.raise_for_status()
+                    query_embedding = resp.json()["embedding"]
+                except Exception as exc:
+                    raise HTTPException(
+                        status_code=503,
+                        detail=f"embedding service unreachable: {exc}",
+                    )
+            else:
+                embedding_service = EmbeddingService(db)
+                query_embedding = embedding_service.generate_embedding(query)
 
             if not query_embedding:
                 return []
@@ -480,9 +501,10 @@ class AdvancedSearchService:
             similarities.sort(key=lambda x: x[1], reverse=True)
             return similarities[:limit]
 
-        except Exception:
-            # If dense search fails, return empty results
-            return []
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"dense search failed: {exc}")
 
     @staticmethod
     def _execute_sparse_search(

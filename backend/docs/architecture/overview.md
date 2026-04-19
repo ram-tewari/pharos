@@ -2,7 +2,7 @@
 
 System architecture for Pharos — the memory and knowledge layer that powers the Ronin LLM coding assistant.
 
-> **Last Updated**: Phase 20 — Pattern Learning Engine, Ronin Integration, Hybrid GitHub Storage
+> **Last Updated**: Phase 20 / 2026-04-18 — Pattern Learning Engine, Ronin Integration, Hybrid GitHub Storage, Edge-Funnel Query Embedding (ADR-013)
 
 ---
 
@@ -282,20 +282,27 @@ All       ──[*.events]──► Monitoring (metrics aggregation)
 │  rate limiting,      graph edges, quality        rate limits,    │
 │  Ronin endpoints     scores. NO source code.     token blacklist │
 │                                                                  │
-│  Memory footprint: <512MB (no ML libraries loaded)               │
-└──────────────────────────┬───────────────────────────────────────┘
-                           │ HTTPS polling (Edge → Cloud)
-┌──────────────────────────┴───────────────────────────────────────┐
-│                  EDGE WORKER (Local RTX 4070 — $0/mo)            │
-│                                                                  │
-│  Tree-sitter AST Parsing ─── Dense Embeddings ─── GNN Training   │
-│  Repository cloning,         nomic-embed-text-v1,  Node2Vec      │
-│  dependency extraction,      SPLADE sparse vectors  (PyTorch     │
-│  code chunk creation                                Geometric)   │
-│                                                                  │
-│  GPU utilization: 70-90% during training                         │
-│  Handles ALL compute-intensive inference locally                 │
-└──────────────────────────────────────────────────────────────────┘
+│  On search query: calls EDGE_EMBEDDING_URL/embed (5 s timeout)   │
+│  Memory footprint: <512 MB (no ML libraries loaded)              │
+└──────────┬───────────────────────────────────┬───────────────────┘
+           │ HTTPS polling (Edge → Cloud)       │ HTTPS query embed
+           │ ingestion tasks via Upstash Redis  │ (Cloud → Funnel)
+           │                                   ▼
+┌──────────┴─────────────────┐  ┌─────────────────────────────────┐
+│  EDGE: Ingestion Worker    │  │  Tailscale Funnel               │
+│  (NSSM: PharosEdgeWorker)  │  │  https://<machine>.<tailnet>.   │
+│                            │  │  ts.net  →  127.0.0.1:8001      │
+│  Tree-sitter AST Parsing   │  └─────────────────┬───────────────┘
+│  Document embeddings        │                    │
+│  (nomic-embed-text-v1, GPU) │                    ▼
+│  SPLADE sparse vectors      │  ┌─────────────────────────────────┐
+│  GNN training (Node2Vec)    │  │  EDGE: Embedding HTTP Server    │
+│  → writes to NeonDB         │  │  (NSSM: PharosEmbedServer)      │
+│                             │  │                                 │
+│  GPU: 70-90% during ingest  │  │  POST /embed → 768-float vector │
+│  Poll interval: 2 s         │  │  nomic-embed-text-v1 on GPU     │
+└─────────────────────────────┘  │  Latency: ~50 ms/query          │
+                                 └─────────────────────────────────┘
 ```
 
 ### Hybrid GitHub Storage
@@ -390,7 +397,8 @@ An ML-based approach would need thousands of labeled examples of "successful" vs
 | Web Framework | FastAPI 0.104+ | Async REST API with auto-generated OpenAPI docs |
 | ORM | SQLAlchemy 2.0 | Database abstraction, supports SQLite (dev) + PostgreSQL (prod) |
 | Validation | Pydantic 2.5+ | Request/response schema validation |
-| Embeddings (Dense) | nomic-embed-text-v1 | 768-dim semantic embeddings for code and documents |
+| Embeddings (Dense) | nomic-embed-text-v1 | 768-dim semantic embeddings for code and documents (Edge only) |
+| Query Embedding API | embed_server.py + Tailscale Funnel | Serves query embeddings to Render via public HTTPS; no ML on cloud |
 | Embeddings (Sparse) | SPLADE | Sparse lexical representations for hybrid search |
 | Vector Index | pgvector (HNSW) | Approximate nearest neighbor search in PostgreSQL |
 | Graph Neural Networks | PyTorch Geometric | Node2Vec structural embeddings (Edge Worker only) |

@@ -32,4 +32,4 @@ Write-Host "Starting Edge Worker..." -ForegroundColor Cyan
 Write-Host "Press Ctrl+C to stop" -ForegroundColor Yellow
 Write-Host ""
 
-python -m app.edge_worker
+python worker.py edge

@@ -6,88 +6,118 @@ Pharos uses a **hybrid edge-cloud architecture** where compute-intensive ML work
 
 ## Architecture Components
 
-### 1. Cloud API (Render Free Tier)
+### 1. Cloud API (Render Starter)
 **Location**: `https://pharos-cloud-api.onrender.com`  
 **RAM**: 512MB  
 **Role**: Lightweight API server
 
 **Responsibilities**:
-- Handle HTTP requests
+- Handle HTTP requests from Ronin
 - Store metadata in NeonDB PostgreSQL
-- Queue tasks in Upstash Redis
-- Return results to clients
-- **Does NOT load embedding models** (too memory-intensive)
+- Queue ingestion tasks in Upstash Redis
+- For search queries: call `EDGE_EMBEDDING_URL/embed` (Tailscale Funnel) to get query embeddings, then run cosine similarity against stored vectors
+- **Does NOT load embedding models** (would OOM the 512 MB instance)
 
 **Environment**:
 ```bash
 MODE=CLOUD
-DATABASE_URL=postgresql+asyncpg://...  # NeonDB
+DATABASE_URL=postgresql+asyncpg://...       # NeonDB
 UPSTASH_REDIS_REST_URL=https://...
-EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1  # Name only, not loaded
+EDGE_EMBEDDING_URL=https://<machine>.<tailnet>.ts.net   # Tailscale Funnel URL
 ```
 
-### 2. Edge Worker (Your Local GPU)
-**Location**: Your local machine  
-**RAM**: 8GB+ recommended  
-**GPU**: CUDA-capable (RTX 3060, 4090, etc.)  
-**Role**: Heavy ML workloads
+### 2. Edge Worker (Your Local GPU) — Two Processes
 
-**Responsibilities**:
-- Load embedding models (nomic-embed-text-v1)
-- Generate embeddings for code/text
-- Process chunking tasks
-- Extract graph entities
-- **Polls Upstash Redis for tasks**
+**Location**: Your local machine (RTX 4070)  
+**Role**: All ML compute
 
-**Environment**:
+#### 2a. Ingestion Worker (`app.edge_worker`)
+
+- Polls Upstash Redis for ingestion tasks
+- Fetches content, generates document embeddings, stores in NeonDB
+- Runs as NSSM service `PharosEdgeWorker`
+
+#### 2b. Embedding HTTP Server (`embed_server.py`)
+
+- Exposes `POST /embed {"text":"…"} → {"embedding":[…]}` on port 8001
+- Loaded model: `nomic-ai/nomic-embed-text-v1` (768-dim, CUDA)
+- Tailscale Funnel proxies `https://<machine>.<tailnet>.ts.net → 127.0.0.1:8001`
+- Called synchronously by the cloud API during search queries
+- Runs as NSSM service `PharosEmbedServer`
+
+**Environment** (both processes):
 ```bash
 MODE=EDGE
-DEVICE=cuda  # Auto-detected
-UPSTASH_REDIS_REST_URL=https://...
-EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1  # Actually loaded
+EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
+UPSTASH_REDIS_REST_URL=https://...    # ingestion worker only
+DATABASE_URL=postgresql+asyncpg://... # ingestion worker only
 ```
+
+### 3. Tailscale Funnel
+
+Provides a stable public HTTPS hostname for the embed server at no cost.
+The Tailscale daemon (`tailscaled`) runs as a Windows service (installed
+automatically by the Tailscale installer). Funnel routing persists in
+`tailscaled` state and survives reboots without a separate service.
 
 ## How It Works
 
-### Request Flow
+### Ingestion Flow (async, background)
 
 ```
-1. User → Cloud API: POST /api/resources (create resource)
+1. Ronin → Cloud API: POST /api/resources (add resource)
    ↓
-2. Cloud API → Upstash Redis: Queue embedding task
+2. Cloud API → Upstash Redis: Queue ingestion task
    ↓
-3. Cloud API → User: 202 Accepted (task queued)
+3. Cloud API → Ronin: 202 Accepted
    ↓
-4. Edge Worker polls Redis: Get next task
+4. Edge ingestion worker polls Redis: dequeues task
    ↓
-5. Edge Worker: Load model, generate embedding
+5. Edge worker: fetch content, generate document embedding (GPU)
    ↓
-6. Edge Worker → NeonDB: Store embedding
+6. Edge worker → NeonDB: store embedding vector
    ↓
-7. Edge Worker → Redis: Mark task complete
-   ↓
-8. User → Cloud API: GET /api/resources/{id} (check status)
-   ↓
-9. Cloud API → User: 200 OK (embedding ready)
+7. Edge worker → Redis: mark task complete
 ```
+
+### Search / Query Flow (synchronous, on every search)
+
+```
+1. Ronin → Cloud API: POST /api/search (query text)
+   ↓
+2. Cloud API → Tailscale Funnel: POST /embed {"text": query}  [5s timeout]
+   ↓
+3. Tailscale Funnel → embed_server (127.0.0.1:8001): forward request
+   ↓
+4. embed_server: encode query with nomic-embed-text-v1 (GPU, ~50ms)
+   ↓
+5. embed_server → Cloud API: {"embedding": [768 floats]}
+   ↓
+6. Cloud API: cosine similarity against NeonDB stored vectors
+   ↓
+7. Cloud API → Ronin: ranked search results
+```
+
+If Tailscale Funnel is unreachable, step 2 raises HTTP 503 — the error
+propagates to Ronin rather than silently returning zero results.
 
 ### Why This Architecture?
 
-**Problem**: Embedding models require >512MB RAM to load
-- `nomic-embed-text-v1`: ~600MB
-- Render Free tier: 512MB limit
-- **Solution**: Don't load models in cloud, use edge worker
+**Problem**: Embedding models require >512 MB RAM to load
+- `nomic-embed-text-v1`: ~600 MB
+- Render Starter: 512 MB limit
+- **Solution**: Load model on local GPU; expose via Tailscale Funnel
 
 **Benefits**:
-1. **Cost**: $0/month for cloud API (Render Free)
-2. **Performance**: GPU acceleration on edge worker (10x faster)
-3. **Scalability**: Cloud API handles 1000s of requests, edge worker processes ML
-4. **Flexibility**: Upgrade edge worker GPU without cloud changes
+1. **Cost**: $0 for compute — local RTX 4070 handles all ML
+2. **Latency**: GPU embedding ~50 ms vs. ~500 ms on CPU
+3. **Correctness**: Query and document embeddings always use the same model
+4. **Simplicity**: No hosted embedding API, no API key, no per-request cost
 
 **Trade-offs**:
-1. **Latency**: Embedding generation not instant (queued)
-2. **Availability**: Edge worker must be running
-3. **Complexity**: Two components to manage
+1. **Laptop dependency**: Search requires laptop to be on and Funnel reachable
+2. **Cold start**: First search after laptop sleep takes ~5 s (model already loaded; just NSSM restart warmup)
+3. **Funnel latency**: ~20–80 ms network round-trip (acceptable within 800 ms budget)
 
 ## Code Changes for MODE=CLOUD
 
@@ -136,16 +166,28 @@ def _ensure_loaded(self):
 - [x] Set `UPSTASH_REDIS_REST_URL`
 - [x] Set `UPSTASH_REDIS_REST_TOKEN`
 - [x] Set `PHAROS_ADMIN_TOKEN`
+- [ ] Set `EDGE_EMBEDDING_URL=https://<machine>.<tailnet>.ts.net` (after Funnel live)
 - [x] Deploy and verify startup (no OOM)
 
-### Edge Worker (Local)
-- [ ] Set `MODE=EDGE`
-- [ ] Set `UPSTASH_REDIS_REST_URL` (same as cloud)
-- [ ] Set `UPSTASH_REDIS_REST_TOKEN` (same as cloud)
-- [ ] Set `DATABASE_URL` (same NeonDB as cloud)
-- [ ] Install `requirements-edge.txt` (includes torch)
-- [ ] Run: `python -m app.edge_worker`
-- [ ] Verify GPU detection and model loading
+### Edge — Ingestion Worker (Local, NSSM: PharosEdgeWorker)
+- [ ] Set `MODE=EDGE` in `.env.edge`
+- [ ] Set `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
+- [ ] Set `DATABASE_URL` (same NeonDB)
+- [ ] Install `requirements-edge.txt`
+- [ ] Install NSSM service `PharosEdgeWorker`
+- [ ] Verify GPU detection and model loading in logs
+
+### Edge — Embedding HTTP Server (Local, NSSM: PharosEmbedServer)
+- [ ] Install NSSM service `PharosEmbedServer` (runs `embed_server.py`)
+- [ ] Verify `GET /health` returns `{"status":"ok"}` on 127.0.0.1:8001
+
+### Tailscale Funnel
+- [ ] Install Tailscale for Windows; sign in with GitHub (ram-tewari)
+- [ ] Enable `funnel` node attribute in admin console
+- [ ] Run `tailscale funnel 8001`
+- [ ] Reboot; verify `tailscale funnel status` shows port 8001
+- [ ] Set `EDGE_EMBEDDING_URL` in Render dashboard
+- [ ] Verify: `curl https://<host>.ts.net/embed -d '{"text":"test"}'` returns 768-float vector
 
 ## Testing the Architecture
 
@@ -192,25 +234,36 @@ curl https://pharos-cloud-api.onrender.com/api/resources/{resource_id} \
 
 ## Troubleshooting
 
-### Cloud API: Out of Memory
+### Search returns HTTP 503 "embedding service unreachable"
+**Cause**: Cloud API cannot reach `EDGE_EMBEDDING_URL`  
+**Fix checklist**:
+1. Is `PharosEmbedServer` running? Check `nssm status PharosEmbedServer`
+2. Does `curl http://127.0.0.1:8001/health` return `{"status":"ok"}`?
+3. Is Tailscale signed in? `tailscale status`
+4. Is Funnel active? `tailscale funnel status` — should show port 8001
+5. Is `EDGE_EMBEDDING_URL` set correctly in Render (no trailing slash)?
+
+### Search returns HTTP 503 "EDGE_EMBEDDING_URL not configured"
+**Cause**: Render env var not set  
+**Fix**: Add `EDGE_EMBEDDING_URL=https://<machine>.<tailnet>.ts.net` in Render dashboard
+
+### Cloud API: Out of Memory at startup
 **Symptom**: `Killed` or `Out of memory` during startup  
 **Cause**: Embedding model loading in CLOUD mode  
-**Fix**: Verify `MODE=CLOUD` is set and code skips model loading
+**Fix**: Verify `MODE=CLOUD` is set — the `_ensure_loaded()` guard skips model loading in CLOUD mode
 
-### Edge Worker: No GPU Detected
+### Ingestion tasks not processing
+**Symptom**: Tasks stuck in pending status  
+**Cause**: `PharosEdgeWorker` not running or not polling Redis  
+**Fix**: `nssm start PharosEdgeWorker`; check logs at `backend/edge_worker.log`
+
+### Edge worker: no GPU detected
 **Symptom**: `CUDA not available, falling back to CPU`  
-**Cause**: PyTorch not installed with CUDA support  
-**Fix**: Install `torch` with CUDA: `pip install torch --index-url https://download.pytorch.org/whl/cu118`
+**Fix**: `pip install torch --index-url https://download.pytorch.org/whl/cu118`
 
-### Tasks Not Processing
-**Symptom**: Tasks stuck in "pending" status  
-**Cause**: Edge worker not running or not polling Redis  
-**Fix**: Start edge worker with correct `UPSTASH_REDIS_REST_URL`
-
-### Connection Refused to NeonDB
+### Connection refused to NeonDB
 **Symptom**: `Connection refused` or `SSL required`  
-**Cause**: Missing `sslmode=require` in DATABASE_URL  
-**Fix**: Add `?sslmode=require` to NeonDB connection string
+**Fix**: Add `?sslmode=require` to NeonDB `DATABASE_URL`
 
 ## Performance Metrics
 
@@ -264,6 +317,6 @@ curl https://pharos-cloud-api.onrender.com/api/resources/{resource_id} \
 
 ---
 
-**Status**: Cloud API deployed, edge worker setup pending  
-**Last Updated**: 2026-04-15  
-**Next**: Verify cloud deployment succeeds without OOM
+**Status**: Cloud API deployed; PharosEmbedServer + Tailscale Funnel setup pending  
+**Last Updated**: 2026-04-18  
+**Next**: Install PharosEmbedServer NSSM service, configure Tailscale Funnel, set EDGE_EMBEDDING_URL in Render

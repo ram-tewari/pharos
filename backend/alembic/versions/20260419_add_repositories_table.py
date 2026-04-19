@@ -1,7 +1,7 @@
 """add repositories table for github hybrid storage
 
 Revision ID: 20260419_repositories
-Revises: 
+Revises: 25c9c391cb35
 Create Date: 2026-04-19 03:00:00.000000
 
 """
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20260419_repositories'
-down_revision = None  # Will be set to latest migration
+down_revision = '25c9c391cb35'
 branch_labels = None
 depends_on = None
 

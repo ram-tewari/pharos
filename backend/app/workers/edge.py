@@ -257,6 +257,54 @@ async def poll_and_process(redis_client, embedding_service, db_session_factory):
             await asyncio.sleep(poll_interval)
 
 
+async def run_fastapi_server(embedding_service):
+    """Run FastAPI server for embedding endpoint."""
+    import uvicorn
+    from fastapi import FastAPI, HTTPException
+    from pydantic import BaseModel
+
+    app = FastAPI(title="Pharos Edge Embedding Server", docs_url=None, redoc_url=None)
+
+    class EmbedRequest(BaseModel):
+        text: str
+
+    class EmbedResponse(BaseModel):
+        embedding: list[float]
+
+    @app.post("/embed", response_model=EmbedResponse)
+    def embed(req: EmbedRequest) -> EmbedResponse:
+        text = (req.text or "").strip()
+        if not text:
+            raise HTTPException(status_code=400, detail="text must be non-empty")
+
+        vec = embedding_service.generate_embedding(text)
+        if not vec:
+            raise HTTPException(status_code=503, detail="model unavailable")
+
+        return EmbedResponse(embedding=vec)
+
+    @app.get("/health")
+    def health() -> dict:
+        return {"status": "ok", "model": embedding_service.model_name}
+
+    # Get port from environment or default to 8001
+    port = int(os.getenv("EDGE_EMBED_PORT", "8001"))
+
+    logger.info(f"Starting FastAPI server on port {port}...")
+
+    config = uvicorn.Config(
+        app,
+        host="127.0.0.1",
+        port=port,
+        log_level="info",
+        access_log=False,
+    )
+    server = uvicorn.Server(config)
+
+    # Run server in background
+    await server.serve()
+
+
 async def main():
     """Main entry point for edge worker."""
     logger.info("=" * 60)
@@ -282,8 +330,11 @@ async def main():
     logger.info("Edge worker ready - waiting for tasks...")
     logger.info("=" * 60)
 
-    # 6. Start polling and processing
-    await poll_and_process(redis_client, embedding_service, db_session_factory)
+    # 6. Start FastAPI server and task polling concurrently
+    await asyncio.gather(
+        run_fastapi_server(embedding_service),
+        poll_and_process(redis_client, embedding_service, db_session_factory),
+    )
 
 
 if __name__ == "__main__":

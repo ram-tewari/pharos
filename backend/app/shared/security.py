@@ -266,6 +266,10 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
     This is a FastAPI dependency that validates the Bearer token from the
     Authorization header and returns the user data from the token.
     
+    Supports:
+    - JWT tokens (OAuth2 user authentication)
+    - Admin token (PHAROS_ADMIN_TOKEN for admin access)
+    
     Performance: Tokens are cached for 60 seconds to avoid repeated validation.
 
     Args:
@@ -277,6 +281,17 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> TokenData:
     Raises:
         HTTPException: 401 if token is invalid, expired, or revoked
     """
+    # Check for admin token first
+    admin_token = os.getenv("PHAROS_ADMIN_TOKEN")
+    if admin_token and token == admin_token:
+        logger.info("Admin token authentication successful")
+        return TokenData(
+            user_id="admin",
+            username="admin",
+            scopes=["admin"],
+            tier="admin",
+        )
+    
     # Check cache first (significant performance improvement)
     current_time = time.time()
     if token in _token_cache:

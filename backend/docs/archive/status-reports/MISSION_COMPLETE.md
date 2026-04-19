@@ -58,7 +58,7 @@ User Request
 ## Key Achievements
 
 ### 1. Cloud API Deployment ✅
-- **URL**: https://pharos-backend-latest.onrender.com
+- **URL**: https://pharos-cloud-api.onrender.com
 - **Status**: Healthy and responding
 - **Mode**: CLOUD (no ML models loaded)
 - **Cost**: $0/month (free tier)
@@ -202,7 +202,7 @@ logger.info("Edge worker stopped")  # Was: "👋 Edge worker stopped"
 
 ### Cloud API (Render)
 ```
-URL: https://pharos-backend-latest.onrender.com
+URL: https://pharos-cloud-api.onrender.com
 Status: ✅ Healthy
 Mode: CLOUD
 Uptime: 100%
@@ -262,9 +262,9 @@ Edge worker ready - waiting for tasks...
 
 ### 2. Create Resource (via Cloud API)
 ```bash
-curl -X POST https://pharos-backend-latest.onrender.com/api/resources \
+curl -X POST https://pharos-cloud-api.onrender.com/api/resources \
   -H "Content-Type: application/json" \
-  -H "Origin: https://pharos-backend-latest.onrender.com" \
+  -H "Origin: https://pharos-cloud-api.onrender.com" \
   -d '{
     "title": "FastAPI Documentation",
     "url": "https://fastapi.tiangolo.com/",
@@ -299,7 +299,7 @@ curl -X POST https://living-sculpin-96916.upstash.io \
 
 ### 4. Check Resource Status
 ```bash
-curl https://pharos-backend-latest.onrender.com/api/resources/{id}
+curl https://pharos-cloud-api.onrender.com/api/resources/{id}
 ```
 
 **Expected Response** (after processing):

@@ -377,125 +377,113 @@ def create_app() -> FastAPI:
         logger.error(f"✗ Failed to register CSRF middleware: {e}")
 
     # Add authentication middleware
-    # TEMPORARILY DISABLED: Auth module has import errors
-    # TODO: Fix auth module imports and re-enable
-    # @app.middleware("http")
-    # async def authentication_middleware(request: Request, call_next):
-    #     """
-    #     Middleware to enforce authentication on all endpoints except excluded paths.
-    #
-    #     Excluded paths:
-    #     - /auth/* - Authentication endpoints
-    #     - /docs - API documentation
-    #     - /openapi.json - OpenAPI schema
-    #     - /monitoring/health - Health check endpoint
-    #     - /api/v1/ingestion/health - Ingestion health check
-    #     - /api/v1/ingestion/worker/status - Worker status monitoring
-    #     - /api/v1/ingestion/jobs/history - Job history monitoring
-    #     - OPTIONS requests (CORS preflight)
-    #     """
-    #     # Skip authentication for OPTIONS requests (CORS preflight)
-    #     if request.method == "OPTIONS":
-    #         return await call_next(request)
-    #
-    #     from .shared.security import get_current_user
-    #     from fastapi import HTTPException, status
-    #
-    #     # Define excluded paths
-    #     excluded_paths = [
-    #         "/health",  # Root health check for Render
-    #         "/docs",
-    #         "/openapi.json",
-    #         "/redoc",
-    #         "/api/monitoring/health",  # Health check endpoint (with /api prefix)
-    #         "/api/v1/ingestion/health",  # Ingestion health check
-    #         "/api/v1/ingestion/worker/status",  # Worker status (public for monitoring)
-    #         "/api/v1/ingestion/jobs/history",  # Job history (public for monitoring)
-    #     ]
-    #
-    #     # Check if path is excluded
-    #     path = request.url.path
-    #     is_excluded = (
-    #         any(path.startswith(excluded) for excluded in excluded_paths)
-    #         or path.startswith("/auth/")
-    #         or path.startswith("/api/auth/")
-    #     )
-    #
-    #     if not is_excluded:
-    #         # Check for test authentication bypass
-    #         # This allows tests to bypass authentication by setting the header
-    #         test_bypass = request.headers.get("X-Test-Auth-Bypass") or os.getenv(
-    #             "TEST_AUTH_BYPASS"
-    #         )
-    #
-    #         if not test_bypass:
-    #             # Require authentication for all other endpoints
-    #             try:
-    #                 # Extract token from Authorization header
-    #                 authorization = request.headers.get("Authorization")
-    #                 if not authorization or not authorization.startswith("Bearer "):
-    #                     from fastapi.responses import JSONResponse
-    #
-    #                     return JSONResponse(
-    #                         status_code=status.HTTP_401_UNAUTHORIZED,
-    #                         content={"detail": "Not authenticated"},
-    #                         headers={"WWW-Authenticate": "Bearer"},
-    #                     )
-    #
-    #                 token = authorization.split(" ")[1]
-    #
-    #                 # Validate token and get user
-    #                 user = await get_current_user(token)
-    #
-    #                 # Store user in request state for downstream use
-    #                 request.state.user = user
-    #
-    #             except HTTPException as http_exc:
-    #                 # Convert HTTPException to JSONResponse
-    #                 from fastapi.responses import JSONResponse
-    #
-    #                 return JSONResponse(
-    #                     status_code=http_exc.status_code,
-    #                     content={"detail": http_exc.detail},
-    #                     headers=http_exc.headers,
-    #                 )
-    #             except Exception as e:
-    #                 logger.error(f"Authentication error: {e}")
-    #                 from fastapi.responses import JSONResponse
-    #
-    #                 return JSONResponse(
-    #                     status_code=status.HTTP_401_UNAUTHORIZED,
-    #                     content={"detail": "Could not validate credentials"},
-    #                     headers={"WWW-Authenticate": "Bearer"},
-    #                 )
-    #         else:
-    #             # Test bypass: create a mock user for testing
-    #             from .shared.security import TokenData
-    #             from uuid import UUID
-    #
-    #             request.state.user = TokenData(
-    #                 user_id=str(UUID("00000000-0000-0000-0000-000000000001")),
-    #                 username="testuser",
-    #                 scopes=[],
-    #                 tier="free",
-    #             )
-    #
-    #     # Process request with error handling
-    #     try:
-    #         response = await call_next(request)
-    #         return response
-    #     except Exception as e:
-    #         logger.error(
-    #             f"Request processing error in authentication middleware: {e}",
-    #             exc_info=True,
-    #             extra={"path": request.url.path, "method": request.method},
-    #         )
-    #         from fastapi.responses import JSONResponse
-    #
-    #         return JSONResponse(
-    #             status_code=500,
-    #             content={"detail": "Internal server error"},
-    #         )
+    @app.middleware("http")
+    async def authentication_middleware(request: Request, call_next):
+        """
+        Middleware to enforce authentication on all endpoints except excluded paths.
+
+        Supports:
+        - PHAROS_ADMIN_TOKEN for admin access
+        - Test bypass for development
+        - Excluded paths for public endpoints
+        """
+        # Skip authentication for OPTIONS requests (CORS preflight)
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
+        from fastapi import HTTPException, status
+        from fastapi.responses import JSONResponse
+
+        # Define excluded paths
+        excluded_paths = [
+            "/health",  # Root health check for Render
+            "/docs",
+            "/openapi.json",
+            "/redoc",
+            "/api/monitoring/health",  # Health check endpoint (with /api prefix)
+            "/api/v1/ingestion/health",  # Ingestion health check
+            "/api/v1/ingestion/worker/status",  # Worker status (public for monitoring)
+            "/api/v1/ingestion/jobs/history",  # Job history (public for monitoring)
+            "/api/search/search/three-way-hybrid",  # Public search endpoint
+            "/api/search/health",  # Search health endpoint
+            "/api/github/health",  # GitHub health endpoint
+        ]
+
+        # Check if path is excluded
+        path = request.url.path
+        is_excluded = (
+            any(path.startswith(excluded) for excluded in excluded_paths)
+            or path.startswith("/auth/")
+            or path.startswith("/api/auth/")
+        )
+
+        if not is_excluded:
+            # Check for test authentication bypass
+            test_bypass = request.headers.get("X-Test-Auth-Bypass") or os.getenv("TEST_AUTH_BYPASS")
+
+            if not test_bypass:
+                # Require authentication for all other endpoints
+                try:
+                    # Extract token from Authorization header
+                    authorization = request.headers.get("Authorization")
+                    if not authorization or not authorization.startswith("Bearer "):
+                        return JSONResponse(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            content={"detail": "Not authenticated"},
+                            headers={"WWW-Authenticate": "Bearer"},
+                        )
+
+                    token = authorization.split(" ")[1]
+
+                    # Check admin token
+                    admin_token = os.getenv("PHAROS_ADMIN_TOKEN")
+                    if admin_token and token == admin_token:
+                        # Valid admin token - create mock user for request state
+                        request.state.user = {
+                            "user_id": "admin",
+                            "username": "admin",
+                            "scopes": ["admin"],
+                            "tier": "admin",
+                        }
+                    else:
+                        return JSONResponse(
+                            status_code=status.HTTP_401_UNAUTHORIZED,
+                            content={"detail": "Invalid authentication token"},
+                            headers={"WWW-Authenticate": "Bearer"},
+                        )
+
+                except Exception as e:
+                    logger.error(f"Authentication error: {e}")
+                    return JSONResponse(
+                        status_code=status.HTTP_401_UNAUTHORIZED,
+                        content={"detail": "Could not validate credentials"},
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+            else:
+                # Test bypass: create a mock user for testing
+                request.state.user = {
+                    "user_id": "testuser",
+                    "username": "testuser",
+                    "scopes": [],
+                    "tier": "free",
+                }
+
+        # Process request with error handling
+        try:
+            response = await call_next(request)
+            return response
+        except Exception as e:
+            logger.error(
+                f"Request processing error in authentication middleware: {e}",
+                exc_info=True,
+                extra={"path": request.url.path, "method": request.method},
+            )
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(
+                status_code=500,
+                content={"detail": "Internal server error"},
+            )
 
     # Add rate limiting middleware
     # TEMPORARILY DISABLED: Depends on auth middleware

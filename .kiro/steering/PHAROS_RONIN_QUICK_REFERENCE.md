@@ -68,7 +68,7 @@ Result: Production-ready in minutes, avoids past mistakes
 
 ### Context Retrieval (Understanding)
 ```http
-POST /api/context/retrieve
+POST https://pharos-cloud-api.onrender.com/api/context/retrieve
 {
   "query": "How does authentication work?",
   "codebase": "myapp-backend",
@@ -81,7 +81,7 @@ Time: <1s
 
 ### Pattern Learning (Creating)
 ```http
-POST /api/patterns/learn
+POST https://pharos-cloud-api.onrender.com/api/patterns/learn
 {
   "task": "create auth microservice",
   "language": "Python",
@@ -94,7 +94,7 @@ Time: <2s
 
 ### GitHub Ingestion (Hybrid Storage)
 ```http
-POST /api/ingest/github
+POST https://pharos-cloud-api.onrender.com/api/ingest/github
 {
   "repo_url": "https://github.com/user/repo",
   "branch": "main"
@@ -343,29 +343,32 @@ A: 10x faster coding, 90% fewer mistakes. Hours saved.
 
 ## Commands
 
-### Start Pharos
+### Start Pharos (Cloud API)
 ```bash
-cd backend
-uvicorn app.main:app --reload
+# Production API is running at:
+# https://pharos-cloud-api.onrender.com
+# 
+# Uses PostgreSQL (NeonDB) - no local setup needed
+# Authentication required for protected endpoints
 ```
 
 ### Test Context Retrieval (Phase 7)
 ```bash
-curl -X POST http://localhost:8000/api/context/retrieve \
+curl -X POST https://pharos-cloud-api.onrender.com/api/context/retrieve \
   -H "Content-Type: application/json" \
   -d '{"query": "authentication", "codebase": "myapp"}'
 ```
 
 ### Test Pattern Learning (Phase 6)
 ```bash
-curl -X POST http://localhost:8000/api/patterns/learn \
+curl -X POST https://pharos-cloud-api.onrender.com/api/patterns/learn \
   -H "Content-Type: application/json" \
   -d '{"task": "create auth", "language": "Python"}'
 ```
 
 ### Ingest GitHub Repo (Phase 5)
 ```bash
-curl -X POST http://localhost:8000/api/ingest/github \
+curl -X POST https://pharos-cloud-api.onrender.com/api/ingest/github \
   -H "Content-Type: application/json" \
   -d '{"repo_url": "https://github.com/user/repo"}'
 ```

@@ -217,16 +217,7 @@ Phase 4 Example:
 
 ## Database Strategy
 
-### SQLite (Development)
-```bash
-DATABASE_URL=sqlite:///./backend.db
-```
-- Zero configuration
-- File-based, portable
-- Limited concurrency
-- No advanced features
-
-### PostgreSQL (Production)
+### PostgreSQL (Production - NeonDB)
 ```bash
 DATABASE_URL=postgresql://user:pass@host:5432/db
 ```
@@ -235,6 +226,16 @@ DATABASE_URL=postgresql://user:pass@host:5432/db
 - Full-text search
 - Advanced indexing
 - Connection pooling
+- **Current**: Used by https://pharos-cloud-api.onrender.com
+
+### SQLite (Development Only)
+```bash
+DATABASE_URL=sqlite:///./backend.db
+```
+- Zero configuration
+- File-based, portable
+- Limited concurrency
+- **Status**: Local development only
 
 ### Migration Path
 - Maintain SQLite compatibility
@@ -244,42 +245,22 @@ DATABASE_URL=postgresql://user:pass@host:5432/db
 
 ## Common Commands
 
-### Backend Development
+### Backend Development (Cloud API)
 ```bash
-# Start dev server
+# Production API: https://pharos-cloud-api.onrender.com
+# Database: PostgreSQL (NeonDB)
+# Authentication: Required (PHAROS_ADMIN_TOKEN)
+
+# Test API health
+curl https://pharos-cloud-api.onrender.com/health
+
+# Test with authentication
+curl -H "Authorization: Bearer $PHAROS_ADMIN_TOKEN" \
+  https://pharos-cloud-api.onrender.com/api/github/health
+
+# Local development (if needed)
 cd backend
 uvicorn app.main:app --reload
-
-# Run migrations
-alembic upgrade head
-
-# Run tests
-pytest tests/ -v
-
-# Run module-specific tests
-pytest tests/modules/test_resources_endpoints.py -v
-
-# Run with coverage
-pytest tests/ --cov=app --cov-report=html
-
-# Run property-based tests
-pytest tests/properties/ -v
-
-# Run E2E workflow tests
-pytest tests/test_e2e_workflows.py -v
-
-# Run performance tests
-pytest tests/performance.py -v
-
-# Lint and format
-ruff check .
-ruff format .
-
-# Check module isolation
-python scripts/check_module_isolation.py
-
-# Verify all modules load
-python test_app_startup.py
 ```
 
 ### Testing Patterns

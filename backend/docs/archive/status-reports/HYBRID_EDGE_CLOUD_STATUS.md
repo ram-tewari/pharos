@@ -9,7 +9,7 @@
 
 The hybrid edge-cloud architecture is **fully implemented and operational**:
 
-- ✅ **Cloud API (Render)**: Deployed and healthy at https://pharos-backend-latest.onrender.com
+- ✅ **Cloud API (Render)**: Deployed and healthy at https://pharos-cloud-api.onrender.com
 - ✅ **Edge Worker (Local GPU)**: Runs on RTX 4070, processes ingestion tasks from Redis queue
 - ✅ **Redis Queue (Upstash)**: Connects cloud API to edge worker via REST API
 - ✅ **Full Ingestion Pipeline**: Successfully tested end-to-end with FastAPI documentation
@@ -60,7 +60,7 @@ The hybrid edge-cloud architecture is **fully implemented and operational**:
 
 ### 1. Cloud API (Render)
 
-**Deployment**: https://pharos-backend-latest.onrender.com  
+**Deployment**: https://pharos-cloud-api.onrender.com  
 **Mode**: `MODE=CLOUD`  
 **Status**: ✅ Healthy (responding to /health checks)
 
@@ -404,9 +404,9 @@ curl -X POST https://living-sculpin-96916.upstash.io \
 
 ### Test Resource Creation
 ```bash
-curl -X POST https://pharos-backend-latest.onrender.com/api/resources \
+curl -X POST https://pharos-cloud-api.onrender.com/api/resources \
   -H "Content-Type: application/json" \
-  -H "Origin: https://pharos-backend-latest.onrender.com" \
+  -H "Origin: https://pharos-cloud-api.onrender.com" \
   -d '{
     "title": "Test Resource",
     "url": "https://example.com",

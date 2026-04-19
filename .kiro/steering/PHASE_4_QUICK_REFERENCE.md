@@ -46,7 +46,7 @@ POST /api/resources/pdf/search/graph
 
 ### 1. Upload a PDF
 ```bash
-curl -X POST http://localhost:8000/api/resources/pdf/ingest \
+curl -X POST https://pharos-cloud-api.onrender.com/api/resources/pdf/ingest \
   -F "file=@paper.pdf" \
   -F "title=Research Paper" \
   -F "tags=ML,AI"
@@ -54,7 +54,7 @@ curl -X POST http://localhost:8000/api/resources/pdf/ingest \
 
 ### 2. Annotate a Chunk
 ```bash
-curl -X POST http://localhost:8000/api/resources/pdf/annotate \
+curl -X POST https://pharos-cloud-api.onrender.com/api/resources/pdf/annotate \
   -H "Content-Type: application/json" \
   -d '{
     "chunk_id": "uuid",
@@ -65,7 +65,7 @@ curl -X POST http://localhost:8000/api/resources/pdf/annotate \
 
 ### 3. Search
 ```bash
-curl -X POST http://localhost:8000/api/resources/pdf/search/graph \
+curl -X POST https://pharos-cloud-api.onrender.com/api/resources/pdf/search/graph \
   -H "Content-Type: application/json" \
   -d '{
     "query": "machine learning",
@@ -165,8 +165,8 @@ Expected: ✅ 6/6 checks passed
 ## API Documentation
 
 View in browser:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+- Swagger UI: https://pharos-cloud-api.onrender.com/docs
+- ReDoc: https://pharos-cloud-api.onrender.com/redoc
 
 Look for "PDF Ingestion" section.
 

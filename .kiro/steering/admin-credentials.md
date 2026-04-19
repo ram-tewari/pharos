@@ -21,9 +21,9 @@
 
 ## Authentication Status
 
-**Current Issue**: Authentication middleware is enabled but `PHAROS_ADMIN_TOKEN` may not be set in production environment, causing 403 Forbidden errors.
+**Status**: ✅ WORKING - Admin token authentication is functional
 
-**Solution**: Set the environment variable in Render dashboard and redeploy.
+**Recent Fix**: Disabled CSRF middleware which was blocking API requests without Origin/Referer headers. Bearer token authentication provides sufficient security for API-only service.
 
 ## Usage
 

@@ -367,14 +367,17 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    # Add CSRF protection middleware
-    try:
-        from .middleware.csrf import CSRFMiddleware
-
-        app.add_middleware(CSRFMiddleware)
-        logger.info("✓ CSRF protection middleware registered")
-    except Exception as e:
-        logger.error(f"✗ Failed to register CSRF middleware: {e}")
+    # CSRF middleware disabled for API-only service
+    # API authentication via Bearer tokens provides sufficient protection
+    # CSRF is primarily needed for cookie-based authentication in web apps
+    # Uncomment below if adding cookie-based authentication:
+    #
+    # try:
+    #     from .middleware.csrf import CSRFMiddleware
+    #     app.add_middleware(CSRFMiddleware)
+    #     logger.info("✓ CSRF protection middleware registered")
+    # except Exception as e:
+    #     logger.error(f"✗ Failed to register CSRF middleware: {e}")
 
     # Add authentication middleware
     @app.middleware("http")

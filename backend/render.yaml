@@ -104,6 +104,11 @@ services:
       - key: MODE
         value: CLOUD  # Queue tasks to edge worker, don't run models locally
       
+      # Edge Embedding Service (Tailscale Funnel URL)
+      # REQUIRED in CLOUD mode for query embedding generation
+      - key: EDGE_EMBEDDING_URL
+        sync: false  # Set manually in dashboard: https://pc.tailf7b210.ts.net
+      
       # Embeddings (handled by edge worker, not loaded in cloud)
       - key: EMBEDDING_MODEL_NAME
         value: nomic-ai/nomic-embed-text-v1

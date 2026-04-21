@@ -199,13 +199,15 @@ class RepositoryWorker:
         # Parse ALL files (no artificial limit)
         for idx, py_file in enumerate(python_files, 1):
             try:
-                relative_path = py_file.relative_to(repo_dir)
+                # as_posix() keeps forward slashes on Windows so downstream
+                # GitHub URLs aren't built with backslashes.
+                relative_path = py_file.relative_to(repo_dir).as_posix()
                 content = py_file.read_text(encoding='utf-8', errors='ignore')
                 lines = len(content.splitlines())
 
                 # Basic file metadata
                 file_data = {
-                    "path": str(relative_path),
+                    "path": relative_path,
                     "size": py_file.stat().st_size,
                     "lines": lines,
                 }
@@ -229,14 +231,14 @@ class RepositoryWorker:
 
                     # Track imports for dependency graph
                     if imports:
-                        metadata["imports"][str(relative_path)] = imports
+                        metadata["imports"][relative_path] = imports
 
                     # Extract functions
                     functions = [node.name for node in ast.walk(tree)
                                 if isinstance(node, ast.FunctionDef)]
                     file_data["functions"] = functions
                     metadata["functions"].extend([
-                        {"file": str(relative_path), "name": f} for f in functions
+                        {"file": relative_path, "name": f} for f in functions
                     ])
 
                     # Extract classes
@@ -244,7 +246,7 @@ class RepositoryWorker:
                               if isinstance(node, ast.ClassDef)]
                     file_data["classes"] = classes
                     metadata["classes"].extend([
-                        {"file": str(relative_path), "name": c} for c in classes
+                        {"file": relative_path, "name": c} for c in classes
                     ])
 
                 except SyntaxError:

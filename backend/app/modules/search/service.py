@@ -176,13 +176,32 @@ class SearchService:
             f"Parent-child search: query='{query}', top_k={top_k}, context_window={context_window}"
         )
 
-        # Generate query embedding
-        try:
-            embedding_service = EmbeddingService(self.db)
-            query_embedding = embedding_service.generate_embedding(query)
-        except Exception as e:
-            logger.error(f"Failed to generate query embedding: {e}")
-            return []
+        # Generate query embedding. In CLOUD mode the local GPU isn't here, so
+        # delegate to the edge /embed endpoint exposed via Tailscale Funnel.
+        import os
+        query_embedding = None
+        if os.getenv("MODE") == "CLOUD":
+            import httpx
+            edge_url = os.getenv("EDGE_EMBEDDING_URL", "").rstrip("/")
+            if not edge_url:
+                logger.error("EDGE_EMBEDDING_URL not configured in CLOUD mode")
+                return []
+            try:
+                resp = httpx.post(
+                    f"{edge_url}/embed", json={"text": query}, timeout=10.0
+                )
+                resp.raise_for_status()
+                query_embedding = resp.json().get("embedding")
+            except Exception as exc:
+                logger.error(f"Edge embedding service unreachable: {exc}")
+                return []
+        else:
+            try:
+                embedding_service = EmbeddingService(self.db)
+                query_embedding = embedding_service.generate_embedding(query)
+            except Exception as e:
+                logger.error(f"Failed to generate query embedding: {e}")
+                return []
 
         if not query_embedding:
             logger.error("Failed to generate query embedding")

@@ -8,10 +8,13 @@ Event handlers subscribe to events from other modules and perform
 appropriate actions without direct service dependencies.
 """
 
+import asyncio
 import logging
+import uuid
 from typing import Dict, Any
 
 from ...shared.event_bus import event_bus, Event, EventPriority
+from ...shared.upstash_redis import UpstashRedisClient
 from ...config.settings import get_settings
 
 logger = logging.getLogger(__name__)
@@ -131,6 +134,57 @@ def handle_resource_created(event: Event) -> None:
         )
 
 
+def handle_resource_chunked(event: Event) -> None:
+    """
+    Handle resource.chunked event by queuing an embedding task to Upstash Redis.
+
+    The task shape matches backend/app/workers/edge.py::process_task, which
+    pops from `pharos:tasks` and dispatches one task per resource_id to
+    process_ingestion(). The edge worker only reads task_id + resource_id.
+    """
+    payload = event.data or {}
+    resource_id = payload.get("resource_id")
+
+    if not resource_id:
+        logger.warning("resource.chunked event missing resource_id, skipping enqueue")
+        return
+
+    task = {
+        "task_id": str(uuid.uuid4()),
+        "resource_id": str(resource_id),
+        "task_type": "embedding",
+        "chunk_count": payload.get("chunk_count"),
+        "strategy": payload.get("strategy"),
+    }
+
+    async def _push() -> None:
+        client = UpstashRedisClient()
+        try:
+            await client.push_task(task)
+        finally:
+            await client.close()
+
+    try:
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            loop.create_task(_push())
+        else:
+            asyncio.run(_push())
+
+        logger.info(
+            f"Queued embedding task {task['task_id']} for resource {resource_id}"
+        )
+    except Exception as e:
+        logger.error(
+            f"Failed to queue embedding task for resource {resource_id}: {e}",
+            exc_info=True,
+        )
+
+
 def register_handlers() -> None:
     """
     Register all event handlers for the Resources module.
@@ -143,5 +197,8 @@ def register_handlers() -> None:
 
     # Subscribe to resource.created for automatic chunking
     event_bus.subscribe("resource.created", handle_resource_created)
+
+    # Subscribe to resource.chunked to queue embedding tasks for the edge worker
+    event_bus.subscribe("resource.chunked", handle_resource_chunked)
 
     logger.info("Resources module event handlers registered")

@@ -287,7 +287,7 @@ async def run_fastapi_server(embedding_service):
 
     @app.get("/health")
     def health() -> dict:
-        return {"status": "ok", "model": embedding_service.model_name}
+        return {"status": "ok", "model": embedding_service.embedding_generator.model_name}
 
     # Get port from environment or default to 8001
     port = int(os.getenv("EDGE_EMBED_PORT", "8001"))

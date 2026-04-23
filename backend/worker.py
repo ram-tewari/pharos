@@ -17,6 +17,25 @@ try:
 except ImportError:
     pass
 
+# Workaround: Python 3.13 platform.*() uses WMI on Windows which can hang indefinitely.
+# Affected: sqlalchemy/util/compat.py (platform.machine) and
+#           prometheus_client/platform_collector.py (platform.system).
+# Fix: cache a synthetic uname_result so all platform.*() calls bypass WMI.
+try:
+    import platform as _platform
+    import os as _os
+
+    _cached_uname = _platform.uname_result(
+        system="Windows",
+        node=_os.environ.get("COMPUTERNAME", "localhost"),
+        release="11",
+        version="10.0.0",
+        machine=_os.environ.get("PROCESSOR_ARCHITECTURE", "AMD64"),
+    )
+    _platform.uname = lambda: _cached_uname
+except Exception:
+    pass
+
 
 def main():
     parser = argparse.ArgumentParser(

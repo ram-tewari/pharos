@@ -45,3 +45,4 @@ __pycache__/
 .Python
 backend/venv/
 backend/.venv/
+backend/.wsl-venv/

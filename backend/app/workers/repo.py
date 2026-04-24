@@ -355,15 +355,20 @@ class RepositoryWorker:
                 
                 for idx, file_data in enumerate(metadata["files"], 1):
                     try:
-                        # Create resource
-                        github_url = f"{repo_url}/blob/main/{file_data['path']}"
-                        identifier = f"repo:{repo_id}:{file_data['path']}"
-                        
+                        # Normalize once: ingestion runs on Windows and
+                        # file_data["path"] uses \ separators. Store forward
+                        # slashes everywhere so URLs and metadata stay POSIX.
+                        file_path_posix = file_data["path"].replace("\\", "/")
+                        # blob/HEAD (not blob/main) so web links resolve
+                        # to the repo's real default branch.
+                        github_url = f"{repo_url}/blob/HEAD/{file_path_posix}"
+                        identifier = f"repo:{repo_id}:{file_path_posix}"
+
                         file_metadata = {
                             "repo_id": repo_id,
                             "repo_url": repo_url,
                             "repo_name": repo_url.split("/")[-1],
-                            "file_path": file_data["path"],
+                            "file_path": file_path_posix,
                             "file_size": file_data.get("size", 0),
                             "lines": file_data.get("lines", 0),
                             "imports": file_data.get("imports", []),
@@ -385,7 +390,7 @@ class RepositoryWorker:
                                 RETURNING id
                             """),
                             {
-                                "title": file_data["path"],
+                                "title": file_path_posix,
                                 "type": "code",
                                 "format": "text/x-python",
                                 "source": github_url,
@@ -398,17 +403,24 @@ class RepositoryWorker:
                         )
                         resource_id = str(result.scalar_one())
                         resources_created += 1
-                        
+
                         # Create chunk
                         summary_parts = [
-                            f"File: {file_data['path']}",
+                            f"File: {file_path_posix}",
                             f"Functions: {', '.join(file_data.get('functions', [])[:10])}",
                             f"Classes: {', '.join(file_data.get('classes', [])[:10])}",
                             f"Imports: {', '.join(file_data.get('imports', [])[:10])}"
                         ]
                         semantic_summary = " | ".join(summary_parts)
-                        
-                        github_uri = f"https://raw.githubusercontent.com/{repo_url.replace('github.com/', '')}/main/{file_data['path']}"
+
+                        # raw.githubusercontent.com + HEAD resolves to the
+                        # repo's actual default branch without a GitHub API
+                        # call at ingest time.
+                        github_uri = (
+                            "https://raw.githubusercontent.com/"
+                            f"{repo_url.replace('github.com/', '')}"
+                            f"/HEAD/{file_path_posix}"
+                        )
                         
                         result = await session.execute(
                             text("""
@@ -436,13 +448,13 @@ class RepositoryWorker:
                                 "chunk_index": 0,
                                 "semantic_summary": semantic_summary,
                                 "github_uri": github_uri,
-                                "branch_reference": "main",
+                                "branch_reference": "HEAD",
                                 "start_line": 1,
                                 "end_line": file_data.get("lines", 0),
                                 "ast_node_type": "module",
-                                "symbol_name": file_data["path"].replace("/", ".").replace(".py", ""),
+                                "symbol_name": file_path_posix.replace("/", ".").replace(".py", ""),
                                 "chunk_metadata": json.dumps({
-                                    "file_path": file_data["path"],
+                                    "file_path": file_path_posix,
                                     "language": "python",
                                     "lines": file_data.get("lines", 0),
                                     "functions": file_data.get("functions", []),
@@ -455,16 +467,16 @@ class RepositoryWorker:
                         chunks_created += 1
                         
                         # Link embedding if available
-                        if file_data["path"] in embeddings:
+                        if file_path_posix in embeddings:
                             await session.execute(
                                 text("""
                                     UPDATE resources
-                                    SET embedding = :embedding
+                                    SET embedding = CAST(:embedding AS vector)
                                     WHERE id = :resource_id
                                 """),
                                 {
                                     "resource_id": resource_id,
-                                    "embedding": json.dumps(embeddings[file_data["path"]])
+                                    "embedding": json.dumps(embeddings[file_path_posix])
                                 }
                             )
                             embeddings_linked += 1
@@ -515,9 +527,10 @@ class RepositoryWorker:
             # Generate embeddings for each file's content summary
             for idx, file_data in enumerate(metadata["files"], 1):
                 try:
+                    file_path_posix = file_data["path"].replace("\\", "/")
                     # Create a summary text for embedding
                     summary_parts = [
-                        f"File: {file_data['path']}",
+                        f"File: {file_path_posix}",
                         f"Functions: {', '.join(file_data.get('functions', [])[:10])}",  # First 10 functions
                         f"Classes: {', '.join(file_data.get('classes', [])[:10])}",  # First 10 classes
                         f"Imports: {', '.join(file_data.get('imports', [])[:10])}",  # First 10 imports
@@ -526,7 +539,7 @@ class RepositoryWorker:
 
                     # Generate embedding (synchronous call, not async)
                     embedding = embedding_service.generate_embedding(summary_text)
-                    embeddings[file_data['path']] = embedding
+                    embeddings[file_path_posix] = embedding
 
                     # Progress indicator every 50 files
                     if idx % 50 == 0:

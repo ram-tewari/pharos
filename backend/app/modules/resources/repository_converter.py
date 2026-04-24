@@ -237,8 +237,16 @@ class RepositoryConverter:
         ]
         semantic_summary = " | ".join(summary_parts)
 
-        # Build GitHub raw URL
-        github_uri = f"https://raw.githubusercontent.com/{repo.url.split('github.com/')[-1]}/main/{file_data['path']}"
+        # Build GitHub raw URL. Normalize Windows backslashes and use HEAD
+        # so raw.githubusercontent.com resolves to whichever branch is the
+        # repo's actual default (main, master, …) without needing a
+        # GitHub API call at ingest time.
+        file_path_posix = file_data["path"].replace("\\", "/")
+        github_uri = (
+            "https://raw.githubusercontent.com/"
+            f"{repo.url.split('github.com/')[-1]}"
+            f"/HEAD/{file_path_posix}"
+        )
 
         # Create chunk with hybrid storage fields
         result = await self.db.execute(
@@ -267,13 +275,13 @@ class RepositoryConverter:
                 "chunk_index": 0,  # One chunk per file
                 "semantic_summary": semantic_summary,
                 "github_uri": github_uri,
-                "branch_reference": "main",
+                "branch_reference": "HEAD",
                 "start_line": 1,
                 "end_line": file_data.get("lines", 0),
                 "ast_node_type": "module",
-                "symbol_name": file_data["path"].replace("/", ".").replace(".py", ""),
+                "symbol_name": file_path_posix.replace("/", ".").replace(".py", ""),
                 "chunk_metadata": json.dumps({
-                    "file_path": file_data["path"],
+                    "file_path": file_path_posix,
                     "language": "python",
                     "lines": file_data.get("lines", 0),
                     "functions": file_data.get("functions", []),

@@ -81,9 +81,12 @@ async def resolve_code_for_chunks(
     fetched_ok = 0
 
     if remote_chunks:
+        # Ingestion on Windows writes file_path with backslashes, which
+        # propagate into github_uri. GitHub's raw host 404s on those —
+        # normalize to forward slashes before we hand them to the fetcher.
         requests = [
             FetchRequest(
-                github_uri=_get(c, "github_uri"),
+                github_uri=(_get(c, "github_uri") or "").replace("\\", "/"),
                 branch_reference=_get(c, "branch_reference") or "HEAD",
                 start_line=_get(c, "start_line") or 1,
                 end_line=_get(c, "end_line") or 9999,

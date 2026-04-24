@@ -207,87 +207,74 @@ class SearchService:
             logger.error("Failed to generate query embedding")
             return []
 
-        # Retrieve top-k chunks by embedding similarity
-        # Note: This is a simplified implementation. In production, this would use:
-        # - FAISS index for fast similarity search
-        # - PostgreSQL pgvector extension
-        # - Approximate nearest neighbor search
+        # Retrieve top-k resources by embedding similarity using pgvector.
+        # resources.embedding is vector(768) with an HNSW cosine index (see
+        # alembic migration 20260410_implement_pgvector_and_splade). Chunks
+        # inherit their parent resource's embedding, so top-K-resources is
+        # equivalent to dedup(top-K-chunks-by-parent-embedding) and avoids
+        # pulling every chunk into Python.
+        from .vector_search_real import RealVectorSearchService
 
-        # For now, we'll retrieve chunks and compute similarity in Python
-        chunks_query = self.db.query(DocumentChunk).join(Resource)
+        vector_service = RealVectorSearchService(self.db)
+        try:
+            ranked = vector_service.dense_vector_search(
+                query_embedding=query_embedding,
+                top_k=top_k,
+                distance_metric="cosine",
+                filters=filters,
+            )
+        except Exception as exc:
+            logger.error(f"pgvector search failed: {exc}", exc_info=True)
+            return []
 
-        # Apply filters if provided
-        if filters:
-            if "resource_type" in filters:
-                chunks_query = chunks_query.filter(
-                    Resource.type == filters["resource_type"]
-                )
-            if "min_quality_score" in filters:
-                chunks_query = chunks_query.filter(
-                    Resource.quality_score >= filters["min_quality_score"]
-                )
+        if not ranked:
+            logger.info("Parent-child search returned 0 results")
+            return []
 
-        all_chunks = chunks_query.all()
+        # Fetch matched resources in one query, preserving rank order.
+        resource_ids = [rid for rid, _ in ranked]
+        resources = (
+            self.db.query(Resource).filter(Resource.id.in_(resource_ids)).all()
+        )
+        resources_by_id = {str(r.id): r for r in resources}
 
-        # Compute similarity scores using actual embeddings from resources table
-        chunk_scores = []
-        for chunk in all_chunks:
-            # Get embedding from parent resource (stored in resources.embedding column)
-            embedding = None
-            if chunk.resource and chunk.resource.embedding:
-                embedding_str = chunk.resource.embedding
-                # Parse JSON string to list of floats
-                if isinstance(embedding_str, str):
-                    import json
-                    try:
-                        embedding = json.loads(embedding_str)
-                    except json.JSONDecodeError:
-                        # Try space-separated format as fallback
-                        embedding = [float(x) for x in embedding_str.split()]
-                else:
-                    embedding = embedding_str  # Already a list
-            
-            if embedding:
-                # Use cosine similarity between query embedding and chunk embedding
-                score = self._cosine_similarity(query_embedding, embedding)
-                chunk_scores.append((chunk, score))
-            else:
-                # Skip chunks without embeddings (don't use keyword fallback for semantic search)
+        results = []
+        for resource_id, distance in ranked:
+            parent_resource = resources_by_id.get(resource_id)
+            if parent_resource is None:
                 continue
 
-        # Top-K via size-K min-heap: O(N log K) instead of O(N log N).
-        top_chunks = heapq.nlargest(top_k, chunk_scores, key=lambda x: x[1])
+            # Representative chunk: first chunk of the matched resource.
+            # Surrounding chunks provide additional context around it.
+            representative = (
+                self.db.query(DocumentChunk)
+                .filter(DocumentChunk.resource_id == parent_resource.id)
+                .order_by(DocumentChunk.chunk_index)
+                .first()
+            )
+            if representative is None:
+                continue
 
-        # Expand to parent resources and surrounding chunks
-        results = []
-        seen_resources = set()
-
-        for chunk, score in top_chunks:
-            # Get parent resource
-            parent_resource = chunk.resource
-
-            # Get surrounding chunks
             surrounding_chunks = self._get_surrounding_chunks(
-                chunk.resource_id, chunk.chunk_index, context_window
+                representative.resource_id,
+                representative.chunk_index,
+                context_window,
             )
 
-            # Deduplicate: if we've already included this resource, skip
-            if parent_resource.id in seen_resources:
-                continue
+            # Cosine distance ∈ [0, 2]; convert to similarity ∈ [-1, 1]
+            # then clamp to [0, 1] for display.
+            score = max(0.0, 1.0 - float(distance))
 
-            seen_resources.add(parent_resource.id)
-
-            # Convert ORM objects to dictionaries
             results.append(
                 {
                     "chunk": {
-                        "id": str(chunk.id),
-                        "resource_id": str(chunk.resource_id),
-                        "content": chunk.content,
-                        "chunk_index": chunk.chunk_index,
-                        "chunk_metadata": chunk.chunk_metadata,
+                        "id": str(representative.id),
+                        "resource_id": str(representative.resource_id),
+                        "content": representative.content,
+                        "chunk_index": representative.chunk_index,
+                        "chunk_metadata": representative.chunk_metadata,
                     },
-                    "parent_resource": parent_resource,  # Will be converted by Pydantic
+                    "parent_resource": parent_resource,
                     "surrounding_chunks": [
                         {
                             "id": str(sc.id),

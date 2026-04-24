@@ -40,7 +40,11 @@ REDIS_TOKEN   = os.environ["UPSTASH_REDIS_REST_TOKEN"]
 DATABASE_URL  = os.environ.get("DATABASE_URL", "")
 EMBED_MODEL   = os.environ.get("EMBEDDING_MODEL_NAME", "nomic-ai/nomic-embed-text-v1")
 PORT          = int(os.environ.get("EDGE_EMBED_PORT", "8001"))
-POLL_INTERVAL = float(os.environ.get("WORKER_POLL_INTERVAL", "3"))
+# Keep REST-call rate well under Upstash free tier (10k/day). Each idle
+# cycle is one BLPOP (server blocks up to BLPOP_TIMEOUT) plus a short
+# sleep — ~10s total keeps us around 8.6k req/day when the queue is empty.
+POLL_INTERVAL = float(os.environ.get("WORKER_POLL_INTERVAL", "1"))
+BLPOP_TIMEOUT = os.environ.get("WORKER_BLPOP_TIMEOUT", "9")
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -108,7 +112,7 @@ async def _rcmd(*args) -> object:
 
 
 async def pop_task() -> dict | None:
-    result = await _rcmd("BLPOP", "pharos:tasks", "1")
+    result = await _rcmd("BLPOP", "pharos:tasks", BLPOP_TIMEOUT)
     if result:
         return json.loads(result[1])
     return None

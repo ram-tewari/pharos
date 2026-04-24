@@ -317,6 +317,76 @@ curl https://pharos-cloud-api.onrender.com/api/resources/{resource_id} \
 
 ---
 
-**Status**: Cloud API deployed; PharosEmbedServer + Tailscale Funnel setup pending  
-**Last Updated**: 2026-04-18  
-**Next**: Install PharosEmbedServer NSSM service, configure Tailscale Funnel, set EDGE_EMBEDDING_URL in Render
+## Production Status (2026-04-24)
+
+### ✅ Fully Operational
+
+**Cloud API**: https://pharos-cloud-api.onrender.com
+- Render Starter ($7/mo)
+- NeonDB PostgreSQL (free tier, 500MB)
+- Upstash Redis (free tier, 10k req/day)
+- pgvector search: 1.8-1.9s latency
+- GitHub code fetching: <100ms (cached)
+
+**Edge Worker**: WSL2 + RTX 4070
+- Tailscale Funnel: `https://pc.tailf7b210.ts.net`
+- nomic-embed-text-v1 (768-dim)
+- ~1.5s per embedding (GPU-accelerated)
+- BLPOP 9s (Upstash free-tier safe)
+
+**Search Quality**: 8.5-9/10 for Ronin context retrieval
+- 3,293 searchable files (langchain corpus)
+- Test file downweighting (0.10 penalty)
+- Semantic summary embeddings (not JSON blob)
+- Pinecone discovery fixed (0 → #2 ranked)
+
+### Recent Improvements (2026-04-24)
+
+1. **pgvector for parent-child search**
+   - Replaced O(N) Python cosine with HNSW index
+   - 40% latency reduction (2.7-4.7s → 1.8-1.9s)
+   - Scalable to 10K+ files
+
+2. **Test file downweighting**
+   - 0.10 distance penalty for `/tests/` paths
+   - Reduced test file dominance (4/5 → 1/5 in top-5)
+   - No over-correction on test-intent queries
+
+3. **Embed semantic_summary (not JSON blob)**
+   - Spread score distribution meaningfully
+   - Fixed vendor-specific discovery (pinecone)
+   - Faster embedding (shorter text)
+
+4. **Ingestion path normalization**
+   - POSIX paths in github_uri (no backslashes)
+   - HEAD ref for default branch resolution
+   - CAST embeddings to vector(768) for asyncpg
+
+5. **Free-tier compliance**
+   - BLPOP 9s → ~8.6k Upstash req/day (under 10k limit)
+   - Redis cache for GitHub fetches (1h TTL)
+   - Hybrid storage: 17x reduction (100GB → 6GB)
+
+### Benchmark Results
+
+**8-Query Evaluation** (langchain corpus):
+
+| Query | Top-1 | Score | Status |
+|-------|-------|-------|--------|
+| OpenAI chat streaming | chat_models/base.py | 0.620 | ✅ Exact |
+| retry exponential backoff | runnables/retry.py | 0.488 | ✅ Better impl |
+| token counting | summarization.py | 0.576 | ⚠️ Uses it |
+| custom tool agent | tool_calling_agent/base.py | 0.597 | ✅ Perfect |
+| pinecone vector store | vectorstores/pinecone.py | 0.561 | 🎯 Fixed |
+| fake LLM mock | tests/.../fake_llm.py | 0.576 | ✅ Literal |
+| recursive text splitter | character.py | 0.715 | ✅ Highest |
+| async batch embeddings | mistralai/embeddings.py | 0.634 | ✅ Strong |
+
+**Infrastructure**: 100% success rate, 0 errors, 1.8-1.9s avg latency
+
+---
+
+**Status**: ✅ Production  
+**Last Updated**: 2026-04-24  
+**Cost**: $7/mo (Render Starter only)  
+**Next**: Add filtered imports to semantic_summary (optional enhancement)

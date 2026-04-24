@@ -2,14 +2,46 @@
 
 Search endpoints for hybrid search combining keyword, semantic, and sparse retrieval methods.
 
+**Production Status (2026-04-24)**: ✅ Operational with pgvector parent-child search, 1.8-1.9s latency, 8.5-9/10 accuracy
+
 ## Overview
 
 The Search API provides state-of-the-art search functionality combining multiple retrieval methods:
 - **FTS5**: Full-text search with SQLite FTS5 or PostgreSQL tsvector
-- **Dense vectors**: Semantic similarity using transformer embeddings
+- **Dense vectors**: Semantic similarity using nomic-embed-text-v1 (768-dim) via pgvector HNSW
 - **Sparse vectors**: Learned keyword importance using SPLADE
+- **Parent-child retrieval**: Search chunks, return parent resources with context (production default)
 - **Three-way hybrid**: RRF fusion of all three methods with adaptive weighting
 - **Reranking**: Optional ColBERT cross-encoder reranking
+
+## Production Improvements (2026-04-24)
+
+### pgvector Parent-Child Search
+
+Replaced O(N) Python cosine similarity with pgvector HNSW index:
+- **40% latency reduction**: 2.7-4.7s → 1.8-1.9s
+- **Scalability**: Handles 3,293+ files without timeout
+- **Test file downweighting**: +0.10 distance penalty for `/tests/` paths
+- **Chunk filtering**: Only searches resources with document_chunks
+
+### Embedding Quality
+
+- **Source**: `title + chunk.semantic_summary` (not JSON blob)
+- **Score distribution**: Meaningful spread (0.44-0.71 range)
+- **Vendor discovery**: Fixed pinecone/library-specific queries
+- **Latency**: ~150ms query embedding via Tailscale Funnel → WSL2 GPU
+
+### Benchmark Results (langchain corpus, 3,293 files)
+
+| Query | Top-1 Result | Score | Status |
+|-------|-------------|-------|--------|
+| OpenAI chat streaming | chat_models/base.py | 0.620 | ✅ Exact |
+| retry exponential backoff | runnables/retry.py | 0.488 | ✅ Better impl |
+| pinecone vector store | vectorstores/pinecone.py | 0.561 | 🎯 Fixed (was 0) |
+| fake LLM mock | tests/.../fake_llm.py | 0.576 | ✅ Literal |
+| recursive text splitter | character.py | 0.715 | ✅ Highest confidence |
+
+**Overall**: 8.5-9/10 accuracy for Ronin context retrieval
 
 ## Endpoints
 

@@ -35,7 +35,14 @@
       "Bash(python -c \" import json, sys d = json.load\\(sys.stdin\\) print\\(f'total={d.get\\(\\\\\"total\\\\\",0\\)}, items={len\\(d.get\\(\\\\\"items\\\\\",[]\\)\\)}'\\) for it in d.get\\('items', []\\)[:3]: print\\(f' - [{it.get\\(\\\\\"type\\\\\",\\\\\"?\\\\\"\\)}] {it.get\\(\\\\\"title\\\\\",\\\\\"?\\\\\"\\)[:70]}'\\) \")",
       "Bash(curl -s --max-time 45 'https://pharos-cloud-api.onrender.com/api/search/search/three-way-hybrid?query=langchain&limit=5')",
       "Bash(python -c \" import json, sys d = json.load\\(sys.stdin\\) print\\(f'total={d.get\\(\\\\\"total\\\\\",0\\)}, latency={d.get\\(\\\\\"latency_ms\\\\\",0\\):.0f}ms'\\) for it in d.get\\('items', []\\)[:5]: print\\(f' - [{it.get\\(\\\\\"type\\\\\",\\\\\"?\\\\\"\\)}] {it.get\\(\\\\\"title\\\\\",\\\\\"?\\\\\"\\)[:70]}'\\) \")",
-      "Bash(curl -s --max-time 30 'https://pharos-cloud-api.onrender.com/api/search/search/three-way-hybrid?query=FastAPI+framework&limit=5&enable_reranking=false')"
+      "Bash(curl -s --max-time 30 'https://pharos-cloud-api.onrender.com/api/search/search/three-way-hybrid?query=FastAPI+framework&limit=5&enable_reranking=false')",
+      "Bash(curl -s --max-time 30 https://pharos-cloud-api.onrender.com/health)",
+      "Bash(curl -s --max-time 30 \"https://pharos-cloud-api.onrender.com/api/search/health\" -H \"Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74\")",
+      "Bash(time curl *)",
+      "Bash(curl -s --max-time 30 \"https://pharos-cloud-api.onrender.com/api/resources?limit=3&has_embedding=true\" -H \"Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74\")",
+      "Bash(wsl -e bash -c 'cd '\\\\''/mnt/c/Users/rooma/PycharmProjects/pharos/backend'\\\\'' && source .wsl-venv/bin/activate && export HF_HOME='\\\\''/mnt/c/Users/rooma/.cache/huggingface'\\\\'' && export TRANSFORMERS_CACHE=\"$HF_HOME\" && python embed_server.py 2>&1')",
+      "Bash(curl -s --max-time 3 http://localhost:8001/health)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }

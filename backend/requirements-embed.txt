@@ -13,3 +13,4 @@ sqlalchemy[asyncio]>=2.0
 asyncpg>=0.30
 aiosqlite>=0.20
 sentence-transformers>=3.0
+einops>=0.7

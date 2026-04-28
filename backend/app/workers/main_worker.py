@@ -22,18 +22,12 @@ Usage:
 from __future__ import annotations
 
 import asyncio
-import ast
-import json
 import logging
 import os
-import shutil
-import subprocess
 import sys
-import tempfile
 import time
 from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +151,21 @@ async def handle_resource_task(task: Dict[str, Any]) -> bool:
 # ---------------------------------------------------------------------------
 
 class RepositoryIngestor:
-    """Clone -> parse -> AST -> embed -> persist a GitHub repository."""
+    """Thin worker-side wrapper around HybridIngestionPipeline.
+
+    The pipeline does the actual work (multi-language clone + chunk + embed +
+    persist with proper vector CAST). We just hand it the worker's GPU-loaded
+    EmbeddingService so we don't load a second model.
+    """
+
+    # Languages we walk into. Linux is C/C++/headers; the rest cover the
+    # common cases the search backend already knows how to render.
+    _DEFAULT_EXTENSIONS: tuple[str, ...] = (
+        ".py", ".js", ".jsx", ".ts", ".tsx",
+        ".go", ".rs", ".java", ".kt", ".scala",
+        ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx",
+        ".rb", ".php", ".swift",
+    )
 
     def __init__(self, embedding_service):
         self.embedding_service = embedding_service
@@ -168,315 +176,45 @@ class RepositoryIngestor:
             logger.error(f"[REPO] task missing repo_url: {task}")
             return False
 
+        # Pipeline requires an https:// clone URL; normalize bare github.com/x/y.
+        if not repo_url.startswith(("http://", "https://")):
+            repo_url = f"https://{repo_url}"
+
+        # Branch is optional — when absent we let git pick the default
+        # (Linux uses `master`, modern repos use `main`).
+        branch = task.get("branch") or None
+        extensions = tuple(task.get("file_extensions") or self._DEFAULT_EXTENSIONS)
+
         started = datetime.now()
-        logger.info(f"[REPO] ingest {repo_url}")
+        logger.info(f"[REPO] ingest {repo_url} (branch={branch or 'default'})")
 
-        temp_dir: Optional[Path] = None
+        from app.modules.ingestion.ast_pipeline import HybridIngestionPipeline
+        from app.shared.database import get_db
+
         try:
-            temp_dir = Path(tempfile.mkdtemp(prefix="pharos_repo_"))
-            if not self._clone(repo_url, temp_dir):
-                return False
-
-            metadata = self._parse(temp_dir)
-            embeddings = self._embed(metadata)
-            repo_id = await self._persist(repo_url, metadata, embeddings)
-
-            duration = (datetime.now() - started).total_seconds()
-            logger.info(
-                f"[REPO] {repo_url} -> {repo_id} | "
-                f"files={metadata['total_files']} lines={metadata['total_lines']} "
-                f"embeddings={len(embeddings)} duration={duration:.1f}s"
-            )
-            return True
+            async for session in get_db():
+                pipeline = HybridIngestionPipeline(
+                    db=session,
+                    embedding_service=self.embedding_service,
+                )
+                result = await pipeline.ingest_github_repo(
+                    git_url=repo_url,
+                    branch=branch,
+                    file_extensions=extensions,
+                )
+                duration = (datetime.now() - started).total_seconds()
+                logger.info(
+                    f"[REPO] {repo_url} done | "
+                    f"resources={result.resources_created} "
+                    f"chunks={result.chunks_created} "
+                    f"failed={result.files_failed} "
+                    f"duration={duration:.1f}s"
+                )
+                return result.resources_created > 0
+            return False
         except Exception as exc:
             logger.error(f"[REPO] {repo_url} failed: {exc}", exc_info=True)
             return False
-        finally:
-            if temp_dir and temp_dir.exists():
-                shutil.rmtree(temp_dir, ignore_errors=True)
-
-    @staticmethod
-    def _clone(repo_url: str, target_dir: Path) -> bool:
-        if not repo_url.startswith(("http://", "https://", "git@")):
-            repo_url = f"https://{repo_url}.git"
-        elif not repo_url.endswith(".git"):
-            repo_url = f"{repo_url}.git"
-
-        result = subprocess.run(
-            ["git", "clone", "--depth", "1", repo_url, str(target_dir)],
-            capture_output=True,
-            text=True,
-            timeout=300,
-        )
-        if result.returncode != 0:
-            logger.error(f"[REPO] clone failed: {result.stderr.strip()}")
-            return False
-        return True
-
-    @staticmethod
-    def _parse(repo_dir: Path) -> Dict[str, Any]:
-        meta: Dict[str, Any] = {
-            "files": [],
-            "total_files": 0,
-            "total_lines": 0,
-            "languages": {},
-            "imports": {},
-            "functions": [],
-            "classes": [],
-        }
-        py_files = list(repo_dir.rglob("*.py"))
-        meta["total_files"] = len(py_files)
-
-        for py in py_files:
-            try:
-                rel = py.relative_to(repo_dir).as_posix()
-                content = py.read_text(encoding="utf-8", errors="ignore")
-                lines = len(content.splitlines())
-                file_data: Dict[str, Any] = {
-                    "path": rel,
-                    "size": py.stat().st_size,
-                    "lines": lines,
-                    "imports": [],
-                    "functions": [],
-                    "classes": [],
-                }
-                try:
-                    tree = ast.parse(content, filename=rel)
-                    for node in ast.walk(tree):
-                        if isinstance(node, ast.Import):
-                            file_data["imports"].extend(a.name for a in node.names)
-                        elif isinstance(node, ast.ImportFrom) and node.module:
-                            file_data["imports"].append(node.module)
-                    file_data["functions"] = [
-                        n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)
-                    ]
-                    file_data["classes"] = [
-                        n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)
-                    ]
-                except SyntaxError:
-                    pass
-
-                if file_data["imports"]:
-                    meta["imports"][rel] = file_data["imports"]
-                meta["functions"].extend(
-                    {"file": rel, "name": f} for f in file_data["functions"]
-                )
-                meta["classes"].extend(
-                    {"file": rel, "name": c} for c in file_data["classes"]
-                )
-                meta["files"].append(file_data)
-                meta["total_lines"] += lines
-            except Exception as exc:
-                logger.warning(f"[REPO] parse failed for {py}: {exc}")
-
-        meta["languages"]["Python"] = len(py_files)
-        return meta
-
-    def _embed(self, metadata: Dict[str, Any]) -> Dict[str, list]:
-        embeddings: Dict[str, list] = {}
-        for file_data in metadata["files"]:
-            try:
-                rel = file_data["path"].replace("\\", "/")
-                summary = " | ".join([
-                    f"File: {rel}",
-                    f"Functions: {', '.join(file_data['functions'][:10])}",
-                    f"Classes: {', '.join(file_data['classes'][:10])}",
-                    f"Imports: {', '.join(file_data['imports'][:10])}",
-                ])
-                vec = self.embedding_service.generate_embedding(summary)
-                if vec:
-                    embeddings[rel] = vec
-            except Exception as exc:
-                logger.warning(f"[REPO] embed failed for {file_data['path']}: {exc}")
-        return embeddings
-
-    @staticmethod
-    async def _persist(
-        repo_url: str,
-        metadata: Dict[str, Any],
-        embeddings: Dict[str, list],
-    ) -> str:
-        from sqlalchemy import text
-        from app.shared.database import get_db
-
-        repo_id = ""
-        async for session in get_db():
-            try:
-                meta_json = {k: v for k, v in metadata.items() if k != "embeddings"}
-                existing = await session.execute(
-                    text("SELECT id FROM repositories WHERE url = :url"),
-                    {"url": repo_url},
-                )
-                existing_id = existing.scalar_one_or_none()
-                if existing_id:
-                    repo_id = str(existing_id)
-                    await session.execute(
-                        text(
-                            """
-                            UPDATE repositories
-                            SET metadata = CAST(:metadata AS jsonb),
-                                total_files = :total_files,
-                                total_lines = :total_lines,
-                                updated_at = NOW()
-                            WHERE id = :repo_id
-                            """
-                        ),
-                        {
-                            "repo_id": repo_id,
-                            "metadata": json.dumps(meta_json),
-                            "total_files": metadata["total_files"],
-                            "total_lines": metadata["total_lines"],
-                        },
-                    )
-                else:
-                    inserted = await session.execute(
-                        text(
-                            """
-                            INSERT INTO repositories (
-                                id, url, name, metadata,
-                                total_files, total_lines,
-                                created_at, updated_at
-                            ) VALUES (
-                                gen_random_uuid(), :url, :name, CAST(:metadata AS jsonb),
-                                :total_files, :total_lines,
-                                NOW(), NOW()
-                            ) RETURNING id
-                            """
-                        ),
-                        {
-                            "url": repo_url,
-                            "name": repo_url.split("/")[-1],
-                            "metadata": json.dumps(meta_json),
-                            "total_files": metadata["total_files"],
-                            "total_lines": metadata["total_lines"],
-                        },
-                    )
-                    repo_id = str(inserted.scalar_one())
-
-                await session.commit()
-
-                for idx, file_data in enumerate(metadata["files"], 1):
-                    try:
-                        rel = file_data["path"].replace("\\", "/")
-                        github_blob = f"{repo_url}/blob/HEAD/{rel}"
-                        github_raw = (
-                            "https://raw.githubusercontent.com/"
-                            f"{repo_url.replace('github.com/', '')}/HEAD/{rel}"
-                        )
-                        identifier = f"repo:{repo_id}:{rel}"
-                        file_meta = {
-                            "repo_id": repo_id,
-                            "repo_url": repo_url,
-                            "repo_name": repo_url.split("/")[-1],
-                            "file_path": rel,
-                            "file_size": file_data.get("size", 0),
-                            "lines": file_data.get("lines", 0),
-                            "imports": file_data.get("imports", []),
-                            "functions": file_data.get("functions", []),
-                            "classes": file_data.get("classes", []),
-                        }
-
-                        res = await session.execute(
-                            text(
-                                """
-                                INSERT INTO resources (
-                                    id, title, type, format, source, identifier,
-                                    description, subject, read_status, quality_score,
-                                    created_at, updated_at
-                                ) VALUES (
-                                    gen_random_uuid(), :title, :type, :format, :source, :identifier,
-                                    :description, CAST(:subject AS jsonb), :read_status, :quality_score,
-                                    NOW(), NOW()
-                                ) RETURNING id
-                                """
-                            ),
-                            {
-                                "title": rel,
-                                "type": "code",
-                                "format": "text/x-python",
-                                "source": github_blob,
-                                "identifier": identifier,
-                                "description": json.dumps(file_meta),
-                                "subject": json.dumps(file_data.get("imports", [])[:10]),
-                                "read_status": "unread",
-                                "quality_score": 0.0,
-                            },
-                        )
-                        resource_id = str(res.scalar_one())
-
-                        semantic_summary = " | ".join([
-                            f"File: {rel}",
-                            f"Functions: {', '.join(file_data.get('functions', [])[:10])}",
-                            f"Classes: {', '.join(file_data.get('classes', [])[:10])}",
-                            f"Imports: {', '.join(file_data.get('imports', [])[:10])}",
-                        ])
-
-                        await session.execute(
-                            text(
-                                """
-                                INSERT INTO document_chunks (
-                                    id, resource_id, chunk_index,
-                                    content, semantic_summary,
-                                    is_remote, github_uri, branch_reference,
-                                    start_line, end_line,
-                                    ast_node_type, symbol_name,
-                                    chunk_metadata, created_at
-                                ) VALUES (
-                                    gen_random_uuid(), :resource_id, 0,
-                                    NULL, :semantic_summary,
-                                    TRUE, :github_uri, 'HEAD',
-                                    1, :end_line,
-                                    'module', :symbol_name,
-                                    CAST(:chunk_metadata AS jsonb), NOW()
-                                )
-                                """
-                            ),
-                            {
-                                "resource_id": resource_id,
-                                "semantic_summary": semantic_summary,
-                                "github_uri": github_raw,
-                                "end_line": file_data.get("lines", 0),
-                                "symbol_name": rel.replace("/", ".").replace(".py", ""),
-                                "chunk_metadata": json.dumps({
-                                    "file_path": rel,
-                                    "language": "python",
-                                    "lines": file_data.get("lines", 0),
-                                    "functions": file_data.get("functions", []),
-                                    "classes": file_data.get("classes", []),
-                                    "imports": file_data.get("imports", []),
-                                }),
-                            },
-                        )
-
-                        if rel in embeddings:
-                            await session.execute(
-                                text(
-                                    """
-                                    UPDATE resources
-                                    SET embedding = CAST(:embedding AS vector)
-                                    WHERE id = :resource_id
-                                    """
-                                ),
-                                {
-                                    "resource_id": resource_id,
-                                    "embedding": json.dumps(embeddings[rel]),
-                                },
-                            )
-
-                        if idx % 100 == 0:
-                            await session.commit()
-                    except Exception as exc:
-                        logger.warning(f"[REPO] persist file failed: {exc}")
-
-                await session.commit()
-                return repo_id
-            except Exception:
-                await session.rollback()
-                raise
-            finally:
-                break
-        return repo_id
-
 
 # ---------------------------------------------------------------------------
 # FastAPI /embed server (kept from edge.py)
@@ -484,26 +222,23 @@ class RepositoryIngestor:
 
 async def run_embed_server(embedding_service) -> None:
     import uvicorn
-    from fastapi import FastAPI, HTTPException
-    from pydantic import BaseModel
+    from fastapi import FastAPI, HTTPException, Body
 
     app = FastAPI(title="Pharos Edge Embed Server", docs_url=None, redoc_url=None)
 
-    class EmbedRequest(BaseModel):
-        text: str
-
-    class EmbedResponse(BaseModel):
-        embedding: list[float]
-
-    @app.post("/embed", response_model=EmbedResponse)
-    def embed(req: EmbedRequest) -> EmbedResponse:
-        text = (req.text or "").strip()
+    # Use Body() instead of a Pydantic model defined in this local scope.
+    # Locally-scoped Pydantic models break FastAPI's body-parameter inference
+    # and the parameter falls back to a query param — causing every Render
+    # call to /embed to 422 with `loc:["query","req"]`.
+    @app.post("/embed")
+    def embed(text: str = Body(..., embed=True)) -> dict:
+        text = (text or "").strip()
         if not text:
             raise HTTPException(status_code=400, detail="text must be non-empty")
         vec = embedding_service.generate_embedding(text)
         if not vec:
             raise HTTPException(status_code=503, detail="model unavailable")
-        return EmbedResponse(embedding=vec)
+        return {"embedding": vec}
 
     @app.get("/health")
     def health() -> dict:

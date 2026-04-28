@@ -335,9 +335,28 @@ class HybridIngestionPipeline:
     The cloned repo is deleted after ingestion — nothing is persisted locally.
     """
 
-    def __init__(self, db: AsyncSession) -> None:
+    def __init__(self, db: AsyncSession, embedding_service: object | None = None) -> None:
         self.db = db
         self._extractor = PythonASTExtractor()
+        # Optional EdgeWorker EmbeddingService — when provided, all embedding
+        # calls go through this single GPU-loaded model instead of the
+        # MiniLM fallback in `_generate_embedding`.
+        self._embedding_service = embedding_service
+
+    async def _embed(self, text: str) -> list[float] | None:
+        """Generate one embedding using the injected service or the fallback."""
+        if self._embedding_service is not None:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            try:
+                vec = await loop.run_in_executor(
+                    None, self._embedding_service.generate_embedding, text
+                )
+                return vec or None
+            except Exception as exc:
+                logger.warning("Injected embedding service failed: %s", exc)
+                return None
+        return await _generate_embedding(text)
 
     # ── Public entry point ─────────────────────────────────────────────────
 
@@ -433,21 +452,23 @@ class HybridIngestionPipeline:
     # ── Private helpers ────────────────────────────────────────────────────
 
     def _clone_repo(
-        self, git_url: str, branch: str, dest: Path
+        self, git_url: str, branch: str | None, dest: Path
     ) -> tuple[git.Repo, str]:
-        """Shallow-clone and return (repo, commit_sha)."""
+        """Shallow-clone and return (repo, commit_sha).
+
+        If `branch` is falsy, the `--branch` flag is omitted so git uses the
+        repository's default branch (e.g. `master` for torvalds/linux).
+        """
+        clone_kwargs: dict[str, object] = {"depth": 1}
+        if branch:
+            clone_kwargs["branch"] = branch
         try:
-            repo = git.Repo.clone_from(
-                git_url, dest,
-                branch=branch,
-                depth=1,
-                # timeout parameter removed for Git < 2.47 compatibility
-            )
+            repo = git.Repo.clone_from(git_url, dest, **clone_kwargs)
         except git.GitCommandError as exc:
             raise RuntimeError(f"Clone failed for {git_url}: {exc}") from exc
 
         sha = repo.head.commit.hexsha
-        logger.info("Cloned %s @ %s (branch=%s)", git_url, sha[:12], branch)
+        logger.info("Cloned %s @ %s (branch=%s)", git_url, sha[:12], branch or "default")
         return repo, sha
 
     @staticmethod
@@ -523,39 +544,75 @@ class HybridIngestionPipeline:
         raw_base = _github_raw_base(git_url, commit_sha)
         file_github_uri = f"{raw_base}/{rel_path}"
 
-        # Create Resource row (one per file) — no raw content stored
+        # Create Resource row (one per file) — no raw content stored.
+        # Use raw SQL because the `read_status` column is a custom Postgres
+        # enum and the ORM's String mapping sends VARCHAR which Postgres
+        # refuses to auto-cast (DatatypeMismatchError).
+        import json as _json
+        from sqlalchemy import text as _sql_text
+
         classification = classify_file(file_path, content)
-        resource = Resource(
-            title=file_path.name,
-            description=f"{language.title()} source — {rel_path}",
-            source=git_url,
-            identifier=rel_path,
-            coverage=commit_sha,
-            type="code_file",
-            format=f"text/{language}",
-            language=language,
-            classification_code=classification,
-            subject=[classification, language],
-            relation=[
-                f"classification:{classification}",
-                f"language:{language}",
-                f"git:commit:{commit_sha}",
-                f"git:url:{git_url}",
-            ],
+        subject = [classification, language]
+        relation = [
+            f"classification:{classification}",
+            f"language:{language}",
+            f"git:commit:{commit_sha}",
+            f"git:url:{git_url}",
+        ]
+        inserted = await self.db.execute(
+            _sql_text(
+                """
+                INSERT INTO resources (
+                    id, title, description, source, identifier, coverage,
+                    type, format, language, classification_code,
+                    subject, relation, read_status, quality_score,
+                    created_at, updated_at
+                ) VALUES (
+                    gen_random_uuid(), :title, :description, :source, :identifier, :coverage,
+                    :type, :format, :language, :classification_code,
+                    CAST(:subject AS jsonb), CAST(:relation AS jsonb),
+                    CAST(:read_status AS read_status), :quality_score,
+                    NOW(), NOW()
+                ) RETURNING id
+                """
+            ),
+            {
+                "title": file_path.name,
+                "description": f"{language.title()} source — {rel_path}",
+                "source": git_url,
+                "identifier": rel_path,
+                "coverage": commit_sha,
+                "type": "code_file",
+                "format": f"text/{language}",
+                "language": language,
+                "classification_code": classification,
+                "subject": _json.dumps(subject),
+                "relation": _json.dumps(relation),
+                "read_status": "unread",
+                "quality_score": 0.0,
+            },
         )
-        self.db.add(resource)
-        await self.db.flush()
+        resource_id = inserted.scalar_one()
+        # Provide a small shim so the rest of _process_file (which references
+        # `resource.id`) keeps working without touching the ORM session.
+        class _ResourceShim:
+            __slots__ = ("id",)
+            def __init__(self, rid): self.id = rid
+        resource = _ResourceShim(resource_id)
         result.resources_created += 1
-        result.resource_ids.append(str(resource.id))  # Track for staleness management
+        result.resource_ids.append(str(resource_id))
 
         # Extract symbols
         chunks: list[DocumentChunk] = []
+
+        # Embedding to write back to the resource via vector CAST.
+        first_embedding: list[float] | None = None
 
         if language in _AST_SUPPORTED:
             symbols = self._extractor.extract(content, module_path)
             for idx, sym in enumerate(symbols):
                 summary = self._extractor.build_semantic_summary(sym, language)
-                embedding_vector = await _generate_embedding(summary)
+                embedding_vector = await self._embed(summary)
                 chunk = DocumentChunk(
                     resource_id=resource.id,
                     chunk_index=idx,
@@ -576,9 +633,8 @@ class HybridIngestionPipeline:
                 self.db.add(chunk)
                 chunks.append(chunk)
 
-                # Also store the embedding on the resource (for global search)
-                if embedding_vector and resource.embedding is None:
-                    resource.embedding = str(embedding_vector)
+                if embedding_vector and first_embedding is None:
+                    first_embedding = embedding_vector
 
                 # Estimate bytes saved: avg symbol body ≈ 800 chars
                 result.estimated_storage_saved_bytes += 800
@@ -587,7 +643,7 @@ class HybridIngestionPipeline:
             # Generic chunking for non-Python files
             line_chunks = chunk_generic_file(content)
             for idx, (start, end, summary) in enumerate(line_chunks):
-                embedding_vector = await _generate_embedding(summary)
+                embedding_vector = await self._embed(summary)
                 chunk = DocumentChunk(
                     resource_id=resource.id,
                     chunk_index=idx,
@@ -604,7 +660,26 @@ class HybridIngestionPipeline:
                 )
                 self.db.add(chunk)
                 chunks.append(chunk)
+
+                if embedding_vector and first_embedding is None:
+                    first_embedding = embedding_vector
+
                 result.estimated_storage_saved_bytes += (end - start) * 40  # ~40 chars/line
+
+        # pgvector column requires explicit CAST — see asyncpg-cast memory.
+        if first_embedding:
+            import json as _json
+            from sqlalchemy import text as _sql_text
+            await self.db.execute(
+                _sql_text(
+                    "UPDATE resources SET embedding = CAST(:embedding AS vector) "
+                    "WHERE id = CAST(:resource_id AS uuid)"
+                ),
+                {
+                    "resource_id": str(resource.id),
+                    "embedding": _json.dumps(first_embedding),
+                },
+            )
 
         result.chunks_created += len(chunks)
         return chunks

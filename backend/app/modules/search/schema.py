@@ -268,7 +268,10 @@ class DocumentChunkResult(BaseModel):
 
     id: str = Field(..., description="Chunk UUID")
     resource_id: str = Field(..., description="Parent resource UUID")
-    content: str = Field(..., description="Chunk content (empty string for remote-only chunks)")
+    content: Optional[str] = Field(
+        default="",
+        description="Chunk content (None or empty string for hybrid-storage chunks where bytes live on GitHub)",
+    )
     chunk_index: int = Field(..., description="Position within parent resource")
     chunk_metadata: Optional[dict] = Field(
         None, description="Chunk metadata (page, line numbers, etc.)"

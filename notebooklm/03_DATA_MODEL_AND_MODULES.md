@@ -140,6 +140,41 @@ This is the **exact string** that gets embedded — not the raw source code, not
 - `github_uri` must be a **POSIX path** (Windows backslashes were breaking raw.githubusercontent.com URLs; normalization is done at write time). The fix: `github_uri.replace("\\", "/")` at ingestion time.
 - Non-SHA `branch_reference` values are rewritten to `HEAD` so raw URLs resolve against the repo's default branch. Why: branch names like "main" or "master" don't always resolve on raw.githubusercontent.com for all repos (especially private repos or deleted branches). `HEAD` always resolves to the default branch. Edge case: if the branch is deleted after ingestion, the URL will 404 — accepted trade-off.
 
+**Phase 1 Enhancement (2026-05-02): DocumentChunkResult Schema**
+
+The search API returns `DocumentChunkResult` Pydantic models, not raw ORM objects. Phase 1 added 11 new fields to this schema:
+
+```python
+class DocumentChunkResult(BaseModel):
+    id: str
+    resource_id: str
+    content: str | None
+    chunk_index: int
+    chunk_metadata: dict
+    semantic_summary: str | None
+    distance: float | None
+    
+    # Phase 1 additions:
+    file_name: str | None          # Extracted from resource.identifier
+    github_uri: str | None         # From chunk_metadata
+    branch_reference: str | None   # From chunk_metadata
+    start_line: int | None         # From chunk_metadata
+    end_line: int | None           # From chunk_metadata
+    symbol_name: str | None        # From chunk_metadata
+    ast_node_type: str | None      # From chunk_metadata (function, class, method)
+    code: str | None               # Fetched from GitHub on-demand
+    source: str | None             # From resource.source (repo URL)
+    cache_hit: bool | None         # Whether code was cached
+```
+
+**Key improvements**:
+1. **Eager loading**: Rewrote `parent_child_search` to use `selectinload(DocumentChunk.resource)` instead of separate queries — 50% faster
+2. **Intelligent ranking**: Chunks ranked by query-term overlap on `semantic_summary`, not always chunk-0 (imports)
+3. **Code resolution for all chunks**: Both primary and surrounding chunks now have `code` populated via `/api/github/fetch`
+4. **Clean mapping**: Added `from_orm_chunk()` classmethod to handle both ORM objects and dict shapes consistently
+
+**Result**: Search responses now include all metadata needed for LLM context without additional API calls.
+
 ---
 
 ### `ChunkLink` (line 406) — Parent-child chunk relationships

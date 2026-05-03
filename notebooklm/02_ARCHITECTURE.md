@@ -238,6 +238,106 @@ POST /api/context/retrieve or POST /api/search/advanced
 
 ---
 
+## Polyglot AST Parsing (Phase 2, 2026-05-02)
+
+Pharos extracts structured code chunks using Abstract Syntax Tree (AST) parsing for 7 languages. Python uses the stdlib `ast` module; all other languages use Tree-sitter 0.23+.
+
+### Language Support
+
+| Language | Parser | Status | Node Types Extracted |
+|---|---|---|---|
+| Python | stdlib `ast` | ✅ Production | function, class, method, async_function |
+| C | tree-sitter-c | ✅ Production | function_definition, struct_specifier, enum_specifier |
+| C++ | tree-sitter-cpp | ✅ Production | function_definition, class_specifier, struct_specifier, namespace_definition |
+| Go | tree-sitter-go | ✅ Production | function_declaration, method_declaration, type_declaration |
+| Rust | tree-sitter-rust | ✅ Production | function_item, impl_item, struct_item, enum_item, trait_item |
+| JavaScript | tree-sitter-javascript | ✅ Production | function_declaration, class_declaration, method_definition, arrow_function |
+| TypeScript | tree-sitter-typescript | ✅ Production | function_declaration, class_declaration, method_definition, interface_declaration |
+| TSX | tree-sitter-tsx | ✅ Production | Same as TypeScript + JSX components |
+
+### Implementation: `LanguageParser` Factory
+
+Located in `backend/app/modules/ingestion/language_parser.py`. Key design:
+
+1. **Factory pattern**: `LanguageParser.for_path(file_path)` returns the appropriate parser based on file extension.
+2. **Tree-sitter 0.23+ API**: Uses individual language packages (`tree-sitter-c`, `tree-sitter-cpp`, etc.) instead of deprecated `tree-sitter-languages`.
+3. **Consistent output**: All parsers return `SymbolInfo` objects with normalized fields:
+   - `name`: Function/class name
+   - `type`: Normalized to `function`, `class`, `method`, `interface`, `struct`, `enum`, `trait`
+   - `start_line`, `end_line`: 1-indexed line numbers
+   - `docstring`: Extracted from comments/docstrings
+   - `signature`: Full function signature with parameters and return type
+   - `imports`: List of imported modules/packages
+   - `calls`: List of function calls within the symbol
+
+4. **Semantic summary format**: All languages produce summaries in the same format:
+   ```
+   [language] signature: 'docstring.' deps: [imports, calls]
+   ```
+   Example (Go):
+   ```
+   [go] func Color(value ...int) *Color: 'Color creates a new color object.' deps: [fmt, Attribute]
+   ```
+
+5. **Graceful fallback**: If Tree-sitter parsing fails (unsupported language, parse error), falls back to line-chunking (500-line chunks with 50-line overlap).
+
+### Tree-sitter Query Examples
+
+**Go function extraction**:
+```scheme
+(function_declaration
+  name: (identifier) @name
+  parameters: (parameter_list) @params
+  result: (_)? @return
+  body: (block) @body)
+```
+
+**JavaScript class extraction**:
+```scheme
+(class_declaration
+  name: (identifier) @name
+  body: (class_body) @body)
+```
+
+**Rust impl block extraction**:
+```scheme
+(impl_item
+  type: (_) @type
+  body: (declaration_list) @body)
+```
+
+### Integration with Ingestion Pipeline
+
+In `backend/app/modules/ingestion/ast_pipeline.py`:
+
+```python
+# Route Python through stdlib ast
+if file_path.suffix == ".py":
+    symbols = extract_python_symbols(content)
+else:
+    # Route other languages through Tree-sitter
+    parser = LanguageParser.for_path(file_path)
+    if parser:
+        symbols = parser.extract_symbols(content)
+    else:
+        # Fallback to line-chunking
+        symbols = line_chunk_fallback(content)
+```
+
+### Performance
+
+- **Python (stdlib ast)**: ~500ms per file (average)
+- **Tree-sitter (C/C++/Go/Rust/JS/TS)**: ~800ms per file (average)
+- **Fallback (line-chunking)**: ~50ms per file (no parsing overhead)
+
+### Verified in Production
+
+- ✅ FastAPI repository (1,123 resources, 5,307 chunks) - JavaScript AST working
+- ✅ fatih/color Go repository (4 resources, 112 chunks in 5.8s) - Go AST working
+- ✅ LangChain repository (3,302 resources) - Python AST working
+
+---
+
 ## Defense of Key Architectural Decisions
 
 ### Why SQLAlchemy + Postgres instead of a purpose-built vector DB (Pinecone, Weaviate, Qdrant)?

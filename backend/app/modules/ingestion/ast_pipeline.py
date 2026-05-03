@@ -68,8 +68,13 @@ logger = logging.getLogger(__name__)
 
 # ── Config ─────────────────────────────────────────────────────────────────────
 
-# Languages that the pipeline can parse at AST level
-_AST_SUPPORTED = {"python"}
+# Languages that the pipeline can parse at AST level.
+# Python uses the stdlib `ast` module; everything else routes through the
+# Tree-Sitter LanguageParser factory (see language_parser.py).
+_AST_SUPPORTED = {
+    "python",
+    "c", "cpp", "go", "rust", "javascript", "typescript", "tsx",
+}
 
 # Extensions → language map (mirrors repo_ingestion.py)
 _EXTENSION_LANGUAGE: dict[str, str] = {
@@ -621,10 +626,25 @@ class HybridIngestionPipeline:
         # Embedding to write back to the resource via vector CAST.
         first_embedding: list[float] | None = None
 
-        if language in _AST_SUPPORTED:
+        # Pick the AST extractor: stdlib ast for Python, Tree-Sitter for
+        # everything in _AST_SUPPORTED. If Tree-Sitter fails to load (e.g.
+        # tree_sitter_languages missing in the container), we fall through
+        # to chunk_generic_file rather than crash the whole ingest.
+        symbols = []
+        summary_fn = None
+        if language == "python":
             symbols = self._extractor.extract(content, module_path)
+            summary_fn = lambda s: self._extractor.build_semantic_summary(s, language)
+        elif language in _AST_SUPPORTED:
+            from .language_parser import LanguageParser, build_semantic_summary
+            ts_parser = LanguageParser.for_path(file_path)
+            if ts_parser is not None:
+                symbols = ts_parser.extract(content, module_path)
+                summary_fn = lambda s: build_semantic_summary(s, language)
+
+        if symbols and summary_fn is not None:
             for idx, sym in enumerate(symbols):
-                summary = self._extractor.build_semantic_summary(sym, language)
+                summary = summary_fn(sym)
                 embedding_vector = await self._embed(summary)
                 chunk = DocumentChunk(
                     resource_id=resource.id,
@@ -653,7 +673,8 @@ class HybridIngestionPipeline:
                 result.estimated_storage_saved_bytes += 800
 
         else:
-            # Generic chunking for non-Python files
+            # Generic chunking — used for unsupported languages OR when the
+            # Tree-Sitter parser failed to produce any symbols.
             line_chunks = chunk_generic_file(content)
             for idx, (start, end, summary) in enumerate(line_chunks):
                 embedding_vector = await self._embed(summary)

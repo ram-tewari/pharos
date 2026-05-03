@@ -602,34 +602,14 @@ def advanced_search_endpoint(
 
         latency_ms = (time.time() - start_time) * 1000
 
-        # Convert results to response format
         response_results = []
         for result in results:
-            # Extract chunk data
-            chunk_data = DocumentChunkResult(
-                id=result["chunk"]["id"],
-                resource_id=result["chunk"]["resource_id"],
-                content=result["chunk"]["content"],
-                chunk_index=result["chunk"]["chunk_index"],
-                chunk_metadata=result["chunk"].get("chunk_metadata"),
-            )
-
-            # Extract parent resource
+            chunk_data = _to_chunk_result(result["chunk"], code_map={})
             parent_resource = ResourceRead.model_validate(result["parent_resource"])
-
-            # Extract surrounding chunks
             surrounding_chunks = [
-                DocumentChunkResult(
-                    id=chunk["id"],
-                    resource_id=chunk["resource_id"],
-                    content=chunk["content"],
-                    chunk_index=chunk["chunk_index"],
-                    chunk_metadata=chunk.get("chunk_metadata"),
-                )
-                for chunk in result.get("surrounding_chunks", [])
+                _to_chunk_result(c, code_map={})
+                for c in result.get("surrounding_chunks", [])
             ]
-
-            # Extract graph path
             graph_path = [
                 GraphPathNode(
                     entity_id=node["entity_id"],
@@ -640,7 +620,6 @@ def advanced_search_endpoint(
                 )
                 for node in result.get("graph_path", [])
             ]
-
             response_results.append(
                 AdvancedSearchResult(
                     chunk=chunk_data,
@@ -671,6 +650,31 @@ def advanced_search_endpoint(
         ) from exc
 
 
+def _to_chunk_result(c, code_map: dict) -> DocumentChunkResult:
+    """Build DocumentChunkResult from either an ORM DocumentChunk or a legacy dict.
+
+    parent_child_search now returns ORM objects; graphrag_search still returns
+    dicts. Tolerating both keeps the wire format stable while we migrate.
+    """
+    from ...database.models import DocumentChunk
+
+    if isinstance(c, DocumentChunk):
+        return DocumentChunkResult.from_orm_chunk(c, code_map.get(str(c.id)))
+
+    cid = str(c.get("id", ""))
+    code_data = code_map.get(cid, {}) or {}
+    return DocumentChunkResult(
+        id=cid,
+        resource_id=str(c.get("resource_id", "")),
+        chunk_index=c.get("chunk_index", 0),
+        content=c.get("content"),
+        chunk_metadata=c.get("chunk_metadata"),
+        code=code_data.get("code"),
+        source=code_data.get("source"),
+        cache_hit=code_data.get("cache_hit"),
+    )
+
+
 def _merge_search_results(
     parent_child_results: List[Dict[str, Any]],
     graphrag_results: List[Dict[str, Any]],
@@ -694,12 +698,19 @@ def _merge_search_results(
     Returns:
         Merged and ranked results
     """
-    # Create a map of chunk_id -> result
+    # Create a map of chunk_id -> result. parent_child_search returns ORM
+    # objects under "chunk"; graphrag_search returns dicts. Normalize ID
+    # extraction so this helper works for both shapes.
+    def _chunk_id(chunk_obj) -> str:
+        if isinstance(chunk_obj, dict):
+            return str(chunk_obj.get("id", ""))
+        return str(getattr(chunk_obj, "id", ""))
+
     merged_map = {}
 
     # Add parent-child results
     for result in parent_child_results:
-        chunk_id = result["chunk"]["id"]
+        chunk_id = _chunk_id(result["chunk"])
         merged_map[chunk_id] = {
             "chunk": result["chunk"],
             "parent_resource": result["parent_resource"],
@@ -711,7 +722,7 @@ def _merge_search_results(
 
     # Merge GraphRAG results
     for result in graphrag_results:
-        chunk_id = result["chunk"]["id"]
+        chunk_id = _chunk_id(result["chunk"])
         if chunk_id in merged_map:
             # Average scores
             existing = merged_map[chunk_id]
@@ -891,54 +902,65 @@ async def advanced_search_endpoint(
         else:
             raise ValueError(f"Unknown strategy: {payload.strategy}")
 
-        # Resolve source code when requested
+        # ── Code resolution: ALL chunks (primary + surrounding) ──────────
+        # Previously only primary chunks were resolved, leaving every entry
+        # in surrounding_chunks with code=None. Now we collect everything
+        # once, deduplicated, and pass ORM objects (not dicts) so the
+        # resolver has github_uri/start_line/end_line to work with.
         code_map: dict[str, dict] = {}
         code_metrics = None
         if payload.include_code and results:
             from ...database.models import DocumentChunk
             from ...modules.github.code_resolver import resolve_code_for_chunks
 
-            chunk_ids = [r["chunk"]["id"] for r in results]
-            orm_chunks = (
-                db.query(DocumentChunk)
-                .filter(DocumentChunk.id.in_(chunk_ids))
-                .all()
-            )
-            code_map, metrics_dict = await resolve_code_for_chunks(orm_chunks)
-            code_metrics = CodeFetchMetrics(**metrics_dict)
+            all_chunks: list = []
+            seen_ids: set[str] = set()
+            for r in results:
+                candidates = [r.get("chunk")]
+                candidates.extend(r.get("surrounding_chunks", []) or [])
+                for c in candidates:
+                    if c is None:
+                        continue
+                    if isinstance(c, DocumentChunk):
+                        cid = str(c.id)
+                        if cid in seen_ids:
+                            continue
+                        seen_ids.add(cid)
+                        all_chunks.append(c)
+                    elif isinstance(c, dict) and c.get("id"):
+                        cid = str(c["id"])
+                        if cid in seen_ids:
+                            continue
+                        seen_ids.add(cid)
+                        # graphrag_search returns dicts; fetch the ORM row
+                        # so we have github_uri/start_line/end_line.
+                        orm = db.get(DocumentChunk, cid)
+                        if orm is not None:
+                            all_chunks.append(orm)
+
+            if all_chunks:
+                try:
+                    code_map, metrics_dict = await resolve_code_for_chunks(all_chunks)
+                    code_metrics = CodeFetchMetrics(**metrics_dict)
+                except Exception as exc:
+                    # Code resolution must NEVER take down search.
+                    logger.error(
+                        "Code resolution failed; returning chunks without code: %s",
+                        exc, exc_info=True,
+                    )
+                    code_map = {}
 
         latency_ms = (time.time() - start_time) * 1000
 
         # Build response
         response_results = []
         for result in results:
-            chunk_id = result["chunk"]["id"]
-            code_data = code_map.get(chunk_id, {})
-
-            chunk_data = DocumentChunkResult(
-                id=chunk_id,
-                resource_id=result["chunk"]["resource_id"],
-                content=result["chunk"]["content"] or "",
-                chunk_index=result["chunk"]["chunk_index"],
-                chunk_metadata=result["chunk"].get("chunk_metadata"),
-                code=code_data.get("code"),
-                source=code_data.get("source"),
-                cache_hit=code_data.get("cache_hit"),
-            )
-
+            primary_chunk = _to_chunk_result(result["chunk"], code_map)
             parent_resource = ResourceRead.model_validate(result["parent_resource"])
-
             surrounding_chunks = [
-                DocumentChunkResult(
-                    id=chunk["id"],
-                    resource_id=chunk["resource_id"],
-                    content=chunk["content"] or "",
-                    chunk_index=chunk["chunk_index"],
-                    chunk_metadata=chunk.get("chunk_metadata"),
-                )
-                for chunk in result.get("surrounding_chunks", [])
+                _to_chunk_result(c, code_map)
+                for c in result.get("surrounding_chunks", []) or []
             ]
-
             graph_path = [
                 GraphPathNode(
                     entity_id=node["entity_id"],
@@ -949,10 +971,9 @@ async def advanced_search_endpoint(
                 )
                 for node in result.get("graph_path", [])
             ]
-
             response_results.append(
                 AdvancedSearchResult(
-                    chunk=chunk_data,
+                    chunk=primary_chunk,
                     parent_resource=parent_resource,
                     surrounding_chunks=surrounding_chunks,
                     graph_path=graph_path,

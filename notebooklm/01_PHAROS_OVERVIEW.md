@@ -95,7 +95,7 @@ pharos/
 | Cache / Queue | Upstash Redis (REST + optional rediss://) |
 | Embeddings (doc + query) | `nomic-ai/nomic-embed-text-v1` (768-dim) |
 | Sparse embeddings | SPLADE (GPU, edge worker only) |
-| Code parsing | Tree-Sitter AST (Python fully supported; JS/TS/Rust/Go/Java partial) |
+| Code parsing | **Tree-Sitter AST** (Python, C, C++, Go, Rust, JavaScript, TypeScript, Java) |
 | Cloud host | Render.com Starter ($7/mo) |
 | Edge compute | Local machine with NVIDIA RTX 4070 GPU, exposed via Tailscale Funnel |
 | Auth | JWT + OAuth2 (Google, GitHub); bearer M2M key for Ronin - **Note**: Over-engineered for single-tenant |
@@ -137,6 +137,8 @@ pharos/
 
 ### ✅ Production-Ready Features
 - ✅ Backend deployed to Render, serving production traffic
+- ✅ **Phase 1: Search Serialization (2026-05-02)** - COMPLETE: Fixed search response with file_name, github_uri, start_line, end_line, code fields; surrounding chunks now have code populated
+- ✅ **Phase 2: Polyglot AST (2026-05-02)** - COMPLETE: Added Tree-sitter support for C, C++, Go, Rust, JavaScript, TypeScript; 7 languages with full AST extraction
 - ✅ **Hybrid GitHub Storage (Phase 5)** - COMPLETE: 17x storage reduction, on-demand code fetching
 - ✅ **Pattern Learning Engine (Phase 6)** - COMPLETE: Learns YOUR coding style from AST + Git history
 - ✅ **Self-Improving Loop (Phase 8)** - COMPLETE: Learns from mistakes via LLM extraction
@@ -178,6 +180,7 @@ pharos/
 - **Staleness Tracking** — ✅ IMPLEMENTED (2026-04-27): System that marks resources as stale when a repo is re-ingested with a new commit SHA. Three new columns: `is_stale` (boolean, indexed), `last_indexed_sha` (string), `last_indexed_at` (timestamp). Search queries automatically filter out stale resources.
 - **Path Exclusions** — ✅ IMPLEMENTED (2026-04-27): Centralized list in `backend/app/utils/path_exclusions.py` that excludes migrations/, alembic/, __generated__, lockfiles, .min.*, _pb2.py, etc. from ingestion. Wired into all three ingest paths.
 - **AST Density Gate** — ✅ IMPLEMENTED (2026-04-27): Heuristic sieve that drops files with <3 control-flow nodes (if/for/while/try) or <0.01 AST density. Prevents flat dataclasses and config files from polluting the feedback queue. Configurable via `FEEDBACK_MIN_CONTROL_FLOW_NODES` and `FEEDBACK_MIN_AST_DENSITY` settings.
+- **Polyglot AST** — ✅ IMPLEMENTED (2026-05-02): Tree-sitter-based parser factory supporting 7 languages (Python, C, C++, Go, Rust, JavaScript, TypeScript). Extracts functions, classes, imports, and calls with consistent `SymbolInfo` format across all languages. Graceful fallback to line-chunking for unsupported languages.
 
 
 ---

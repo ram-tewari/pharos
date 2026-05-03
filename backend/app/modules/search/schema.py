@@ -266,20 +266,75 @@ class AdvancedSearchRequest(BaseModel):
 class DocumentChunkResult(BaseModel):
     """Document chunk in search results."""
 
+    model_config = ConfigDict(from_attributes=True)
+
+    # Identity
     id: str = Field(..., description="Chunk UUID")
     resource_id: str = Field(..., description="Parent resource UUID")
-    content: Optional[str] = Field(
-        default="",
-        description="Chunk content (None or empty string for hybrid-storage chunks where bytes live on GitHub)",
-    )
     chunk_index: int = Field(..., description="Position within parent resource")
-    chunk_metadata: Optional[dict] = Field(
-        None, description="Chunk metadata (page, line numbers, etc.)"
+
+    # Content (None for hybrid-storage chunks where bytes live on GitHub)
+    content: Optional[str] = Field(
+        default=None,
+        description="Inline content for PDF/text chunks; None for code chunks served from GitHub",
     )
-    # Code retrieval fields — populated when include_code=True in the request
+    chunk_metadata: Optional[dict] = Field(
+        None, description="Flexible metadata (language, dependencies, page, etc.)"
+    )
+
+    # Symbol-level identity
+    symbol_name: Optional[str] = Field(
+        None, description="Fully-qualified name, e.g. auth.oauth.handle_oauth_callback"
+    )
+    ast_node_type: Optional[str] = Field(
+        None, description="function | class | method | block | import"
+    )
+    semantic_summary: Optional[str] = Field(
+        None, description="Signature + docstring + deps used for embedding"
+    )
+
+    # File-level identity (derived from chunk + resource)
+    file_name: Optional[str] = Field(
+        None, description="Basename, e.g. oauth.py — derived from github_uri"
+    )
+    github_uri: Optional[str] = Field(
+        None, description="raw.githubusercontent.com URL for the symbol"
+    )
+    branch_reference: Optional[str] = Field(None, description="Pinned commit SHA or branch")
+    start_line: Optional[int] = Field(None, description="1-based start line")
+    end_line: Optional[int] = Field(None, description="1-based end line, inclusive")
+
+    # Resolved code (populated when include_code=True)
     code: Optional[str] = Field(None, description="Resolved source code (local content or GitHub fetch)")
-    source: Optional[Literal["local", "github"]] = Field(None, description="Where the code was retrieved from")
+    source: Optional[Literal["local", "github"]] = Field(
+        None, description="Where the code was retrieved from"
+    )
     cache_hit: Optional[bool] = Field(None, description="True if the code was served from Redis cache")
+
+    @classmethod
+    def from_orm_chunk(cls, chunk, code_data: Optional[dict] = None) -> "DocumentChunkResult":
+        """Build from a DocumentChunk ORM object plus optional resolved code."""
+        code_data = code_data or {}
+        github_uri = chunk.github_uri or ""
+        file_name = github_uri.rsplit("/", 1)[-1] if github_uri else None
+        return cls(
+            id=str(chunk.id),
+            resource_id=str(chunk.resource_id),
+            chunk_index=chunk.chunk_index,
+            content=chunk.content,
+            chunk_metadata=chunk.chunk_metadata,
+            symbol_name=chunk.symbol_name,
+            ast_node_type=chunk.ast_node_type,
+            semantic_summary=chunk.semantic_summary,
+            file_name=file_name,
+            github_uri=chunk.github_uri,
+            branch_reference=chunk.branch_reference,
+            start_line=chunk.start_line,
+            end_line=chunk.end_line,
+            code=code_data.get("code"),
+            source=code_data.get("source"),
+            cache_hit=code_data.get("cache_hit"),
+        )
 
 
 class GraphPathNode(BaseModel):

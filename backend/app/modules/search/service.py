@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import heapq
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy.orm import Session
 
@@ -148,82 +148,41 @@ class SearchService:
     # ========================================================================
 
     def parent_child_search(
-        self, query: str, top_k: int = 10, context_window: int = 2, filters: dict = None
+        self,
+        query: str,
+        top_k: int = 10,
+        context_window: int = 2,
+        filters: Optional[dict] = None,
     ) -> List[dict]:
         """
-        Execute parent-child retrieval strategy.
+        Vector-rank resources, then load a representative chunk + neighbors
+        for each, with the parent Resource eagerly joined.
 
-        Retrieves top-k chunks by embedding similarity, then expands to parent
-        resources and surrounding chunks for context.
-
-        Args:
-            query: Search query text
-            top_k: Number of chunks to retrieve
-            context_window: Number of surrounding chunks to include (±N)
-            filters: Optional filters for resources (type, quality_score, etc.)
-
-        Returns:
-            List of result dictionaries with:
-            - chunk: Dict with chunk data
-            - parent_resource: Dict with resource data
-            - surrounding_chunks: List of dicts with chunk data
-            - score: Similarity score
+        Returns dicts where `chunk`, `parent_resource`, and entries in
+        `surrounding_chunks` are ORM objects (not dicts) so callers can
+        read every field — including github_uri, start_line, end_line,
+        symbol_name, etc. — without a second round-trip.
         """
-        from ...database.models import DocumentChunk, Resource
-        from ...shared.embeddings import EmbeddingService
+        from sqlalchemy import select, text as _sql
+        from sqlalchemy.orm import selectinload
+
+        from ...database.models import DocumentChunk
 
         logger.info(
-            f"Parent-child search: query='{query}', top_k={top_k}, context_window={context_window}"
+            "parent_child_search: query=%r, top_k=%d, context_window=%d",
+            query, top_k, context_window,
         )
 
-        # Generate query embedding. In CLOUD mode the local GPU isn't here, so
-        # delegate to the edge /embed endpoint exposed via Tailscale Funnel.
-        import os
-        query_embedding = None
-        if os.getenv("MODE") == "CLOUD":
-            import httpx
-            edge_url = os.getenv("EDGE_EMBEDDING_URL", "").rstrip("/")
-            if not edge_url:
-                logger.error("EDGE_EMBEDDING_URL not configured in CLOUD mode")
-                return []
-            try:
-                # 30s tolerates Render cold-starts and bursts where the edge
-                # /embed endpoint is queued behind heavy ingestion. 10s was
-                # too tight under load and timed out on warm queries.
-                resp = httpx.post(
-                    f"{edge_url}/embed", json={"text": query}, timeout=30.0
-                )
-                resp.raise_for_status()
-                query_embedding = resp.json().get("embedding")
-            except Exception as exc:
-                logger.error(f"Edge embedding service unreachable: {exc}")
-                return []
-        else:
-            try:
-                embedding_service = EmbeddingService(self.db)
-                query_embedding = embedding_service.generate_embedding(query)
-            except Exception as e:
-                logger.error(f"Failed to generate query embedding: {e}")
-                return []
-
+        query_embedding = self._embed_query(query)
         if not query_embedding:
-            logger.error("Failed to generate query embedding")
             return []
-
-        # Retrieve top-k resources by embedding similarity using pgvector.
-        # resources.embedding is vector(768) with an HNSW cosine index (see
-        # alembic migration 20260410_implement_pgvector_and_splade). Filter
-        # to resources that actually have chunks — test ingests and records
-        # with only a resource-level embedding would otherwise outrank real
-        # content and then get dropped when we look for a representative chunk.
-        from sqlalchemy import text as _sql
 
         embedding_str = f"[{','.join(map(str, query_embedding))}]"
         params: Dict[str, Any] = {"embedding": embedding_str, "top_k": top_k}
         where = [
             "r.embedding IS NOT NULL",
             "EXISTS (SELECT 1 FROM document_chunks dc WHERE dc.resource_id = r.id)",
-            "(r.is_stale IS NULL OR r.is_stale = FALSE)",  # Exclude stale resources
+            "(r.is_stale IS NULL OR r.is_stale = FALSE)",
         ]
         if filters:
             if "resource_type" in filters:
@@ -233,15 +192,10 @@ class SearchService:
                 where.append("r.quality_score >= :min_quality_score")
                 params["min_quality_score"] = filters["min_quality_score"]
 
-        # Penalize files under tests/ directories — they embed similarly to
-        # the modules they exercise (because they import + use everything in
-        # them), so without a penalty a query like "fake LLM" surfaces 4
-        # test files before the one real implementation. 0.10 ≈ 10% of the
-        # 0.4–0.7 distance band these results live in, enough to flip the
-        # ranking without burying test files entirely (they stay reachable
-        # when the query is specifically about testing).
-        # Match both /tests/ (POSIX, new data) and \tests\ (legacy Windows).
-        sql = (
+        # Stage 1: pgvector rank at resource level (HNSW on r.embedding).
+        # tests/ penalty: see commit history — keeps test modules reachable
+        # without crowding out the real implementations.
+        rank_sql = (
             "SELECT r.id::text AS resource_id, "
             "(r.embedding <=> CAST(:embedding AS vector)) "
             "+ CASE WHEN r.title ~ '(/|\\\\)tests(/|\\\\)' THEN 0.10 ELSE 0 END "
@@ -250,80 +204,105 @@ class SearchService:
             f"WHERE {' AND '.join(where)} "
             "ORDER BY distance ASC LIMIT :top_k"
         )
-
         try:
-            ranked = [
-                (row[0], float(row[1]))
-                for row in self.db.execute(_sql(sql), params).fetchall()
-            ]
+            ranked = self.db.execute(_sql(rank_sql), params).fetchall()
         except Exception as exc:
-            logger.error(f"pgvector search failed: {exc}", exc_info=True)
+            logger.error("pgvector search failed: %s", exc, exc_info=True)
             return []
-
         if not ranked:
-            logger.info("Parent-child search returned 0 results")
+            logger.info("parent_child_search returned 0 results")
             return []
 
-        # Fetch matched resources in one query, preserving rank order.
-        resource_ids = [rid for rid, _ in ranked]
-        resources = (
-            self.db.query(Resource).filter(Resource.id.in_(resource_ids)).all()
-        )
-        resources_by_id = {str(r.id): r for r in resources}
+        distance_by_rid: Dict[str, float] = {row[0]: float(row[1]) for row in ranked}
+        resource_ids = list(distance_by_rid.keys())
 
-        results = []
-        for resource_id, distance in ranked:
-            parent_resource = resources_by_id.get(resource_id)
+        # Stage 2: SQLAlchemy 2.0 select with selectinload — chunks + parent
+        # Resource in one logical fetch (selectinload runs a second IN-list
+        # query, cheap, no row-explosion vs joinedload's LEFT OUTER JOIN).
+        stmt = (
+            select(DocumentChunk)
+            .options(selectinload(DocumentChunk.resource))
+            .where(DocumentChunk.resource_id.in_(resource_ids))
+            .order_by(DocumentChunk.resource_id, DocumentChunk.chunk_index)
+        )
+        chunks_by_rid: Dict[str, list] = {}
+        try:
+            for chunk in self.db.execute(stmt).scalars().all():
+                chunks_by_rid.setdefault(str(chunk.resource_id), []).append(chunk)
+        except Exception as exc:
+            logger.error("Chunk eager-load failed: %s", exc, exc_info=True)
+            return []
+
+        # Stage 3: pick a representative chunk per resource.
+        # Without chunk-level embeddings, do a cheap text-overlap re-rank on
+        # semantic_summary so we don't always return chunk_index=0 (imports).
+        query_terms = {t.lower() for t in query.split() if len(t) > 2}
+
+        def _score(chunk) -> tuple[int, int]:
+            summary = (chunk.semantic_summary or "").lower()
+            overlap = sum(1 for t in query_terms if t in summary)
+            ast_bonus = 1 if (chunk.ast_node_type in {"function", "class", "method"}) else 0
+            return (overlap, ast_bonus)
+
+        results: List[dict] = []
+        for rid in resource_ids:
+            chunks = chunks_by_rid.get(rid)
+            if not chunks:
+                continue
+            representative = max(chunks, key=_score) if query_terms else chunks[0]
+            parent_resource = representative.resource
             if parent_resource is None:
                 continue
 
-            # Representative chunk: first chunk of the matched resource.
-            # Surrounding chunks provide additional context around it.
-            representative = (
-                self.db.query(DocumentChunk)
-                .filter(DocumentChunk.resource_id == parent_resource.id)
-                .order_by(DocumentChunk.chunk_index)
-                .first()
-            )
-            if representative is None:
-                continue
+            idx = representative.chunk_index
+            surrounding = [
+                c for c in chunks
+                if c.id != representative.id
+                and idx - context_window <= c.chunk_index <= idx + context_window
+            ]
 
-            surrounding_chunks = self._get_surrounding_chunks(
-                representative.resource_id,
-                representative.chunk_index,
-                context_window,
-            )
+            # Cosine distance ∈ [0, 2] → similarity clamped to [0, 1].
+            score = max(0.0, 1.0 - distance_by_rid[rid])
 
-            # Cosine distance ∈ [0, 2]; convert to similarity ∈ [-1, 1]
-            # then clamp to [0, 1] for display.
-            score = max(0.0, 1.0 - float(distance))
+            results.append({
+                "chunk": representative,
+                "parent_resource": parent_resource,
+                "surrounding_chunks": surrounding,
+                "score": score,
+            })
 
-            results.append(
-                {
-                    "chunk": {
-                        "id": str(representative.id),
-                        "resource_id": str(representative.resource_id),
-                        "content": representative.content,
-                        "chunk_index": representative.chunk_index,
-                        "chunk_metadata": representative.chunk_metadata,
-                    },
-                    "parent_resource": parent_resource,
-                    "surrounding_chunks": [
-                        {
-                            "id": str(sc.id),
-                            "resource_id": str(sc.resource_id),
-                            "content": sc.content,
-                            "chunk_index": sc.chunk_index,
-                            "chunk_metadata": sc.chunk_metadata,
-                        }
-                        for sc in surrounding_chunks
-                    ],
-                    "score": score,
-                }
-            )
-
-        logger.info(f"Parent-child search returned {len(results)} results")
+        logger.info("parent_child_search → %d results", len(results))
         return results
+
+    def _embed_query(self, query: str) -> Optional[List[float]]:
+        """Edge-or-local query embedding, factored out so other strategies
+        can reuse it without duplicating the CLOUD-mode branching."""
+        import os
+
+        if os.getenv("MODE") == "CLOUD":
+            import httpx
+            edge_url = os.getenv("EDGE_EMBEDDING_URL", "").rstrip("/")
+            if not edge_url:
+                logger.error("EDGE_EMBEDDING_URL not configured in CLOUD mode")
+                return None
+            try:
+                # 30s tolerates Render cold-starts and bursts where the edge
+                # /embed endpoint is queued behind heavy ingestion.
+                resp = httpx.post(
+                    f"{edge_url}/embed", json={"text": query}, timeout=30.0
+                )
+                resp.raise_for_status()
+                return resp.json().get("embedding")
+            except Exception as exc:
+                logger.error("Edge embedding service unreachable: %s", exc)
+                return None
+
+        try:
+            from ...shared.embeddings import EmbeddingService
+            return EmbeddingService(self.db).generate_embedding(query)
+        except Exception as exc:
+            logger.error("Local embedding failed: %s", exc)
+            return None
 
     def _get_surrounding_chunks(
         self, resource_id: str, chunk_index: int, context_window: int

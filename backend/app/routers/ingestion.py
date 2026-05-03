@@ -467,21 +467,20 @@ async def trigger_remote_ingestion(
 
         # Push directly to ingest_queue (not pharos:tasks which is for resources)
         import json
-        await redis._execute(["RPUSH", "ingest_queue", json.dumps(task_data)])
+        redis.rpush("ingest_queue", json.dumps(task_data))
 
         # Also record in history for tracking
-        await redis._execute([
-            "RPUSH",
+        redis.rpush(
             "pharos:history",
             json.dumps({
                 "repo_url": repo_url,
                 "status": "pending",
                 "timestamp": task_data["submitted_at"],
             }),
-        ])
+        )
 
         # Get queue position (approximate)
-        queue_size = await redis._execute(["LLEN", "ingest_queue"]) or 0
+        queue_size = redis.llen("ingest_queue") or 0
 
         logger.info(
             f"Task dispatched: {repo_url} (job_id={task_data['job_id']}, queue_size={queue_size})"
